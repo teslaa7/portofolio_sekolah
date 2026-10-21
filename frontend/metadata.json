@@ -1,0 +1,6 @@
+{
+  "name": "Portofolio Sekolah",
+  "description": "Website galeri karya murid sekolah dengan panel admin guru untuk mengelola dan memamerkan proyek digital.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
