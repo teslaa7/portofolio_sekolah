@@ -1,6 +1,8 @@
+// owner_id: null = karya admin/sekolah; angka = id murid pemilik
 export const initialPortfolios = [
   {
     id: 1,
+    owner_id: 2, // Ahmad Fauzi
     title: 'Website Koperasi Siswa "Kopmart"',
     slug: 'website-koperasi-siswa-kopmart',
     short_description: 'Platform digitalisasi inventaris toko dan kasir koperasi sekolah berbasis web responsif.',
@@ -8,7 +10,7 @@ export const initialPortfolios = [
     student_name: 'Ahmad Fauzi & Tim',
     class_name: 'XII RPL 1',
     major: 'Rekayasa Perangkat Lunak (RPL)',
-    category_id: 1, // Sistem Informasi
+    category_id: 1,
     tech_stack: ['React', 'Tailwind CSS', 'Node.js', 'PostgreSQL'],
     project_url: 'https://kopmart-smk-demo.vercel.app',
     repo_url: 'https://github.com/smk-student/kopmart-pos',
@@ -26,6 +28,7 @@ export const initialPortfolios = [
   },
   {
     id: 2,
+    owner_id: 2, // Ahmad Fauzi
     title: 'Aplikasi Absensi Digital Berbasis QR Code',
     slug: 'aplikasi-absensi-digital-qr-code',
     short_description: 'Sistem presensi kelas cepat dan real-time menggunakan pemindaian QR dinamis setiap hari.',
@@ -33,7 +36,7 @@ export const initialPortfolios = [
     student_name: 'Dina Safitri',
     class_name: 'XII RPL 2',
     major: 'Rekayasa Perangkat Lunak (RPL)',
-    category_id: 4, // Aplikasi Mobile/PWA
+    category_id: 4,
     tech_stack: ['Next.js', 'PWA', 'Tailwind CSS', 'Firebase'],
     project_url: 'https://presensi-smk.web.app',
     repo_url: 'https://github.com/dinasafitri/qr-attendance-school',
@@ -50,6 +53,7 @@ export const initialPortfolios = [
   },
   {
     id: 3,
+    owner_id: 4, // Rani Dewi
     title: 'Company Profile UMKM Batik Sekar Melati',
     slug: 'company-profile-umkm-batik-sekar-melati',
     short_description: 'Website profil usaha batik lokal dengan katalog motif interaktif dan galeri workshop.',
@@ -57,7 +61,7 @@ export const initialPortfolios = [
     student_name: 'Rian Kurniawan & Putri Laras',
     class_name: 'XII Multimedia 1',
     major: 'Desain Komunikasi Visual / Multimedia',
-    category_id: 3, // Company Profile
+    category_id: 3,
     tech_stack: ['Vite', 'React', 'Framer Motion', 'Tailwind CSS'],
     project_url: 'https://batik-sekarmelati.id.demo',
     repo_url: 'https://github.com/smk-multimedia/batik-sekar-melati',
@@ -75,6 +79,7 @@ export const initialPortfolios = [
   },
   {
     id: 4,
+    owner_id: null, // karya sekolah
     title: 'Toko Online Kerajinan Anyaman Bambu',
     slug: 'toko-online-kerajinan-anyaman-bambu',
     short_description: 'E-commerce produk anyaman bambu desa binaan dengan integrasi keranjang belanja.',
@@ -82,7 +87,7 @@ export const initialPortfolios = [
     student_name: 'Bagus Pratama',
     class_name: 'XI RPL 1',
     major: 'Rekayasa Perangkat Lunak (RPL)',
-    category_id: 2, // E-Commerce
+    category_id: 2,
     tech_stack: ['React', 'Zustand', 'Tailwind CSS', 'Supabase'],
     project_url: 'https://bambucraft-demo.netlify.app',
     repo_url: 'https://github.com/bagus-p/bambu-craft-ecommerce',
@@ -99,6 +104,7 @@ export const initialPortfolios = [
   },
   {
     id: 5,
+    owner_id: 3, // Siti Rahayu
     title: 'Sistem Informasi Perpustakaan Digital "LibSMK"',
     slug: 'sistem-informasi-perpustakaan-digital-libsmk',
     short_description: 'Katalog buku digital dan manajemen peminjaman buku perpustakaan sekolah terlengkap.',
@@ -106,7 +112,7 @@ export const initialPortfolios = [
     student_name: 'Siti Nurhaliza & Edo Wijaya',
     class_name: 'XII RPL 2',
     major: 'Rekayasa Perangkat Lunak (RPL)',
-    category_id: 1, // Sistem Informasi
+    category_id: 1,
     tech_stack: ['React', 'Express', 'MariaDB', 'Bootstrap'],
     project_url: 'https://lib-smk-portal.vercel.app',
     repo_url: 'https://github.com/sitinur/perpustakaan-smk',
@@ -123,6 +129,7 @@ export const initialPortfolios = [
   },
   {
     id: 6,
+    owner_id: 4, // Rani Dewi
     title: 'Landing Page Event Pameran Teknologi & Vokasi',
     slug: 'landing-page-event-pameran-vokasi',
     short_description: 'Website resmi promosi acara pameran karya teknologi tahunan SMK dengan registrasi tiket.',
@@ -130,7 +137,7 @@ export const initialPortfolios = [
     student_name: 'Kiki Ramadhan',
     class_name: 'XI Multimedia 2',
     major: 'Desain Komunikasi Visual / Multimedia',
-    category_id: 5, // Landing Page
+    category_id: 5,
     tech_stack: ['HTML5', 'Tailwind CSS', 'Alpine.js', 'Vite'],
     project_url: 'https://vokasiexpo.smk.id',
     repo_url: 'https://github.com/kiki-ramadhan/expo-vokasi-landing',
@@ -147,6 +154,7 @@ export const initialPortfolios = [
   },
   {
     id: 7,
+    owner_id: 3, // Siti Rahayu
     title: 'Aplikasi Monitoring Jaringan Lab Komputer (NetLab)',
     slug: 'aplikasi-monitoring-jaringan-lab-komputer-netlab',
     short_description: 'Dashboard pemantau status koneksi router MikroTik dan komputer lab sekolah.',
@@ -154,7 +162,7 @@ export const initialPortfolios = [
     student_name: 'Faisal Akbar & Hendra Saputra',
     class_name: 'XII TKJ 1',
     major: 'Teknik Komputer & Jaringan (TKJ)',
-    category_id: 1, // Sistem Informasi
+    category_id: 1,
     tech_stack: ['React', 'Chart.js', 'RouterOS API', 'Node.js'],
     project_url: 'https://netlab-smk.internal-demo.net',
     repo_url: 'https://github.com/faisalakbar/mikrotik-lab-monitor',
@@ -171,6 +179,7 @@ export const initialPortfolios = [
   },
   {
     id: 8,
+    owner_id: null, // karya sekolah
     title: 'Simulasi Pembukuan & Laporan Keuangan UMKM (BukuKas)',
     slug: 'simulasi-pembukuan-keuangan-umkm-bukukas',
     short_description: 'Aplikasi pembukuan jurnal umum, buku besar, dan neraca saldo standar akuntansi UKM.',
@@ -178,7 +187,7 @@ export const initialPortfolios = [
     student_name: 'Anisa Rahmawati & Tim Akuntansi',
     class_name: 'XII Akuntansi 1',
     major: 'Akuntansi & Keuangan Lembaga',
-    category_id: 1, // Sistem Informasi
+    category_id: 1,
     tech_stack: ['React', 'Tailwind CSS', 'SheetJS', 'LocalForage'],
     project_url: 'https://bukukas-smk-demo.vercel.app',
     repo_url: 'https://github.com/anisa-rahma/akuntansi-bukukas',
@@ -195,6 +204,7 @@ export const initialPortfolios = [
   },
   {
     id: 9,
+    owner_id: 4, // Rani Dewi
     title: 'Portal Berita & Buletin Ekstrakurikuler "WartaSiswa"',
     slug: 'portal-berita-buletin-ekskul-wartasiswa',
     short_description: 'Website publikasi karya jurnalistik, cerpen, artikel fotografi, dan info ekstrakurikuler.',
@@ -202,7 +212,7 @@ export const initialPortfolios = [
     student_name: 'Nabila Azzahra',
     class_name: 'XI Multimedia 1',
     major: 'Desain Komunikasi Visual / Multimedia',
-    category_id: 3, // Company Profile
+    category_id: 3,
     tech_stack: ['Next.js', 'Tailwind CSS', 'Markdown', 'Vercel'],
     project_url: 'https://wartasiswa.sch.id.demo',
     repo_url: 'https://github.com/nabila-az/wartasiswa-smk',
@@ -219,6 +229,7 @@ export const initialPortfolios = [
   },
   {
     id: 10,
+    owner_id: 3, // Siti Rahayu
     title: 'Sistem Tiket Helpdesk & Pengaduan Fasilitas Sekolah',
     slug: 'sistem-tiket-helpdesk-pengaduan-fasilitas',
     short_description: 'Sistem pelaporan kerusakan sarana lab dan kelas dengan pelacakan status penanganan.',
@@ -226,7 +237,7 @@ export const initialPortfolios = [
     student_name: 'Bima Satria',
     class_name: 'XII TKJ 2',
     major: 'Teknik Komputer & Jaringan (TKJ)',
-    category_id: 1, // Sistem Informasi
+    category_id: 1,
     tech_stack: ['Vue.js', 'Fastify', 'MariaDB', 'Tailwind CSS'],
     project_url: 'https://helpdesk.smk.internal-preview.com',
     repo_url: 'https://github.com/bimasatria/smk-helpdesk',
@@ -242,6 +253,7 @@ export const initialPortfolios = [
   },
   {
     id: 11,
+    owner_id: null, // karya sekolah
     title: 'Katalog Wisata Edukasi Desa Karang Asri',
     slug: 'katalog-wisata-edukasi-desa-karang-asri',
     short_description: 'Website promosi paket wisata agrowisata dan homestay desa binaan sekolah.',
@@ -249,7 +261,7 @@ export const initialPortfolios = [
     student_name: 'Taufik Hidayat & Sarah Melani',
     class_name: 'XI Multimedia 2',
     major: 'Desain Komunikasi Visual / Multimedia',
-    category_id: 5, // Landing Page
+    category_id: 5,
     tech_stack: ['React', 'Tailwind CSS', 'Leaflet', 'Vite'],
     project_url: 'https://wisatakarangasri.id.demo',
     repo_url: 'https://github.com/taufikh/wisata-karang-asri',
@@ -265,6 +277,7 @@ export const initialPortfolios = [
   },
   {
     id: 12,
+    owner_id: 3, // Siti Rahayu
     title: 'Aplikasi Inventaris Peralatan Bengkel TKJ & Otomotif',
     slug: 'aplikasi-inventaris-bengkel-tkj-otomotif',
     short_description: 'Pencatatan peminjaman alat praktik bengkel, multimeter, tang crimping, dan tester kabel.',
@@ -272,7 +285,7 @@ export const initialPortfolios = [
     student_name: 'Danang Prasetyo',
     class_name: 'XII TKJ 1',
     major: 'Teknik Komputer & Jaringan (TKJ)',
-    category_id: 1, // Sistem Informasi
+    category_id: 1,
     tech_stack: ['React', 'Zustand', 'Tailwind CSS', 'WebRTC'],
     project_url: 'https://inventaris-bengkel.smk.demo',
     repo_url: 'https://github.com/danang-p/inventaris-bengkel-smk',

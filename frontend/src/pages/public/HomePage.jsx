@@ -11,49 +11,53 @@ import {
   Layers,
   Users,
   Compass,
+  MessageSquare,
 } from 'lucide-react';
 import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
+import { reviewService } from '../../services/reviewService.js';
 import { PortfolioGrid } from '../../components/portfolio/PortfolioGrid.jsx';
 import { Button } from '../../components/common/Button.jsx';
+import { StarRating } from '../../components/reviews/StarRating.jsx';
 import { LoadingSpinner } from '../../components/common/LoadingSkeleton.jsx';
+import { formatDate } from '../../utils/formatDate.js';
 
 export function HomePage() {
   const [featuredPortfolios, setFeaturedPortfolios] = useState([]);
   const [latestPortfolios, setLatestPortfolios] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [latestReviews, setLatestReviews] = useState([]);
+  const [portfolioMap, setPortfolioMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadHomeData = async () => {
       try {
         setLoading(true);
-        // Load categories
         const catRes = await categoryService.getCategories();
         setCategories(catRes.data || []);
 
-        // Load featured published portfolios
-        const featRes = await portfolioService.getPortfolios({
-          status: 'published',
-          is_featured: true,
-          limit: 3,
-        });
+        const featRes = await portfolioService.getPortfolios({ status: 'published', is_featured: true, limit: 3 });
         setFeaturedPortfolios(featRes.data || []);
 
-        // Load latest published portfolios
-        const latestRes = await portfolioService.getPortfolios({
-          status: 'published',
-          limit: 6,
-          sortBy: 'latest',
-        });
-        setLatestPortfolios(latestRes.data || []);
+        const latestRes = await portfolioService.getPortfolios({ status: 'published', limit: 6, sortBy: 'latest' });
+        const allLatest = latestRes.data || [];
+        setLatestPortfolios(allLatest);
+
+        // Build portfolio lookup map for review section
+        const allPortRes = await portfolioService.getPortfolios({ status: 'published', limit: 100 });
+        const pMap = {};
+        (allPortRes.data || []).forEach((p) => { pMap[p.id] = p; });
+        setPortfolioMap(pMap);
+
+        const reviewRes = await reviewService.getLatestReviews(4);
+        setLatestReviews(reviewRes.data || []);
       } catch (err) {
         console.error('Error loading home data:', err);
       } finally {
         setLoading(false);
       }
     };
-
     loadHomeData();
   }, []);
 
@@ -273,6 +277,64 @@ export function HomePage() {
           <PortfolioGrid portfolios={latestPortfolios} categories={categories} />
         )}
       </section>
+
+      {/* Ulasan Terbaru */}
+      {latestReviews.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0B2E6B] bg-blue-50 px-3 py-1 rounded-full mb-2">
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Suara Pengunjung</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] font-heading">
+                Ulasan Terbaru
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Apa kata pengunjung tentang karya-karya terbaik siswa kami.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {latestReviews.map((review) => {
+              const portfolio = portfolioMap[review.portfolio_id];
+              const initials = review.name
+                .split(' ')
+                .slice(0, 2)
+                .map((w) => w[0]?.toUpperCase() || '')
+                .join('');
+              return (
+                <div
+                  key={review.id}
+                  className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col gap-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[#0B2E6B] text-white text-sm font-bold flex items-center justify-center shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[#0F172A] truncate">{review.name}</p>
+                      <StarRating value={review.rating} readonly size="sm" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                    "{review.comment}"
+                  </p>
+                  {portfolio && (
+                    <Link
+                      to={`/portofolio/${portfolio.slug}`}
+                      className="mt-auto text-xs font-semibold text-[#0B2E6B] hover:text-[#1E40AF] truncate"
+                    >
+                      → {portfolio.title}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* CTA Kolaborasi Industri */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

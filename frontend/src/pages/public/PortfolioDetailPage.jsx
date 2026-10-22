@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -11,20 +11,27 @@ import {
   Star,
   CheckCircle2,
   Share2,
+  MessageSquare,
 } from 'lucide-react';
 import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
+import { reviewService } from '../../services/reviewService.js';
 import { Button } from '../../components/common/Button.jsx';
 import { PortfolioGrid } from '../../components/portfolio/PortfolioGrid.jsx';
 import { LoadingSpinner } from '../../components/common/LoadingSkeleton.jsx';
 import { ErrorState } from '../../components/common/ErrorState.jsx';
+import { RatingSummary } from '../../components/reviews/RatingSummary.jsx';
+import { ReviewForm } from '../../components/reviews/ReviewForm.jsx';
+import { ReviewList } from '../../components/reviews/ReviewList.jsx';
 import { formatDate } from '../../utils/formatDate.js';
 import { useToast } from '../../hooks/useToast.jsx';
+import { useAuth } from '../../hooks/useAuth.jsx';
 
 export function PortfolioDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
 
   const [portfolio, setPortfolio] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -33,6 +40,20 @@ export function PortfolioDetailPage() {
   const [activeImage, setActiveImage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Review state
+  const [ratingSummary, setRatingSummary] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const loadReviews = useCallback(async (portfolioId) => {
+    const [summaryRes, listRes] = await Promise.all([
+      reviewService.getRatingSummary(portfolioId),
+      reviewService.getReviews(portfolioId, { limit: 100 }),
+    ]);
+    if (summaryRes.success) setRatingSummary(summaryRes.data);
+    if (listRes.success) setReviews(listRes.data || []);
+  }, []);
 
   useEffect(() => {
     const loadDetail = async () => {
@@ -59,6 +80,9 @@ export function PortfolioDetailPage() {
         // Load related portfolios
         const relRes = await portfolioService.getRelatedPortfolios(data.id, data.category_id, 3);
         setRelatedPortfolios(relRes.data || []);
+
+        // Load reviews
+        await loadReviews(data.id);
       } catch (err) {
         setError(err.message || 'Terjadi kesalahan saat memuat portofolio');
       } finally {
@@ -72,14 +96,34 @@ export function PortfolioDetailPage() {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: portfolio?.title,
-        url: window.location.href,
-      });
+      navigator.share({ title: portfolio?.title, url: window.location.href });
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Tautan portofolio berhasil disalin!');
     }
+  };
+
+  const handleSubmitReview = async (payload) => {
+    if (!portfolio) return;
+    const res = await reviewService.addReview(portfolio.id, payload);
+    if (res.success) {
+      toast.success(res.message);
+      await loadReviews(portfolio.id);
+    } else {
+      toast.error(res.message || 'Gagal mengirim ulasan.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    setIsDeleting(true);
+    const res = await reviewService.deleteReview(reviewId, user);
+    if (res.success) {
+      toast.success('Ulasan berhasil dihapus.');
+      await loadReviews(portfolio.id);
+    } else {
+      toast.error(res.message);
+    }
+    setIsDeleting(false);
   };
 
   if (loading) {
@@ -314,6 +358,32 @@ export function PortfolioDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Rating & Ulasan */}
+        <section className="pt-4" id="ulasan">
+          <div className="mb-6 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-[#0B2E6B]" />
+            <h3 className="text-2xl font-bold text-[#0F172A] font-heading">Rating &amp; Ulasan</h3>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5">
+              {ratingSummary && <RatingSummary summary={ratingSummary} />}
+            </div>
+            <div className="lg:col-span-7">
+              <ReviewForm onSubmit={handleSubmitReview} currentUser={user ?? null} />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <ReviewList
+              reviews={reviews}
+              currentUser={user ?? null}
+              onDelete={handleDeleteReview}
+              isDeleting={isDeleting}
+            />
+          </div>
+        </section>
 
         {/* Related Portfolios Section */}
         {relatedPortfolios.length > 0 && (

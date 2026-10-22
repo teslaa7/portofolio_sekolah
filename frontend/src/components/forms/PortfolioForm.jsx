@@ -29,14 +29,17 @@ export function PortfolioForm({
   onSubmit,
   isSubmitting = false,
   isEdit = false,
+  currentUser = null,
 }) {
   const navigate = useNavigate();
+  const isStudent = currentUser?.role === 'student';
 
   const [formData, setFormData] = useState({
     title: initialData.title || '',
-    student_name: initialData.student_name || '',
-    class_name: initialData.class_name || '',
-    major: initialData.major || MAJORS[0],
+    // Murid: isi dari akun jika tambah baru, edit bebas
+    student_name: initialData.student_name || (isStudent && !isEdit ? currentUser?.name : '') || '',
+    class_name: initialData.class_name || (isStudent && !isEdit ? currentUser?.class_name : '') || '',
+    major: initialData.major || (isStudent && !isEdit ? currentUser?.major : MAJORS[0]) || MAJORS[0],
     category_id: initialData.category_id || (categories[0]?.id || 1),
     short_description: initialData.short_description || '',
     description: initialData.description || '',
@@ -46,7 +49,8 @@ export function PortfolioForm({
     thumbnail_url: initialData.thumbnail_url || '',
     tech_stack: initialData.tech_stack || ['React', 'Tailwind CSS'],
     screenshots: initialData.screenshots || [],
-    status: initialData.status || 'published',
+    // Murid default published
+    status: initialData.status || (isStudent ? 'published' : 'published'),
     is_featured: Boolean(initialData.is_featured),
   });
 
@@ -325,27 +329,29 @@ export function PortfolioForm({
           )}
         </div>
 
-        {/* Is Featured Checkbox */}
-        <div className="pt-2">
-          <label className="inline-flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl bg-amber-50/60 border border-amber-200/80 hover:bg-amber-50 transition-colors">
-            <input
-              type="checkbox"
-              name="is_featured"
-              checked={formData.is_featured}
-              onChange={handleChange}
-              className="w-4 h-4 rounded text-[#F2B705] focus:ring-[#F2B705] border-amber-300"
-            />
-            <div>
-              <span className="text-sm font-bold text-amber-900 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                Tandai sebagai Karya Unggulan (Featured)
-              </span>
-              <span className="text-xs text-amber-700 block">
-                Karya ini akan ditampilkan di baris teratas Beranda publik.
-              </span>
-            </div>
-          </label>
-        </div>
+        {/* Is Featured Checkbox — hanya admin */}
+        {!isStudent && (
+          <div className="pt-2">
+            <label className="inline-flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl bg-amber-50/60 border border-amber-200/80 hover:bg-amber-50 transition-colors">
+              <input
+                type="checkbox"
+                name="is_featured"
+                checked={formData.is_featured}
+                onChange={handleChange}
+                className="w-4 h-4 rounded text-[#F2B705] focus:ring-[#F2B705] border-amber-300"
+              />
+              <div>
+                <span className="text-sm font-bold text-amber-900 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  Tandai sebagai Karya Unggulan (Featured)
+                </span>
+                <span className="text-xs text-amber-700 block">
+                  Karya ini akan ditampilkan di baris teratas Beranda publik.
+                </span>
+              </div>
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Kartu 2: Tech Stack & Tautan Proyek */}

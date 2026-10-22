@@ -6,19 +6,24 @@ import { useToast } from '../../hooks/useToast.jsx';
 import { Button } from '../common/Button.jsx';
 
 export function AdminHeader({ onOpenSidebar, pageTitle = 'Dashboard' }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isStudent } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
 
   const handleLogout = async () => {
     await logout();
-    toast.info('Anda telah keluar dari panel admin.');
+    toast.info('Anda telah keluar dari panel.');
     navigate('/login');
   };
 
-  // Sembunyikan tombol "Tambah Portofolio" saat sudah berada di halaman form tambah
+  // Sembunyikan tombol "Tambah Portofolio" saat sudah di halaman form tambah
   const isOnAddPage = location.pathname === '/admin/portofolio/tambah';
+
+  // Label bawah avatar
+  const roleLabel = isStudent
+    ? `Murid · ${user?.class_name || ''}`
+    : 'Admin Guru';
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 h-20 px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-all">
@@ -37,13 +42,16 @@ export function AdminHeader({ onOpenSidebar, pageTitle = 'Dashboard' }) {
             {pageTitle}
           </h1>
           <p className="text-xs text-slate-500 hidden sm:block">
-            Panel Pengelolaan Karya & Portofolio Siswa
+            Panel Pengelolaan Karya &amp; Portofolio Siswa
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <Link to="/admin/portofolio/tambah" className={`hidden sm:inline-block${isOnAddPage ? ' invisible' : ''}`}>
+        <Link
+          to="/admin/portofolio/tambah"
+          className={`hidden sm:inline-block${isOnAddPage ? ' invisible' : ''}`}
+        >
           <Button variant="primary" size="sm" icon={Plus}>
             Tambah Portofolio
           </Button>
@@ -59,16 +67,19 @@ export function AdminHeader({ onOpenSidebar, pageTitle = 'Dashboard' }) {
 
         <div className="flex items-center gap-2.5 pl-1">
           <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'}
+            src={
+              user?.avatar ||
+              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+            }
             alt={user?.name || 'User'}
             className="w-9 h-9 rounded-full object-cover border border-slate-200"
           />
           <div className="hidden lg:block text-left">
             <span className="block text-xs font-semibold text-slate-800 leading-tight">
-              {user?.name || 'Guru Admin'}
+              {user?.name || 'Pengguna'}
             </span>
             <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-              Admin Guru
+              {roleLabel}
             </span>
           </div>
         </div>

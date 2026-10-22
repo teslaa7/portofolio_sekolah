@@ -7,10 +7,7 @@ import {
   Trash2,
   Eye,
   Star,
-  ExternalLink,
   RotateCcw,
-  CheckCircle2,
-  Clock,
 } from 'lucide-react';
 import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
@@ -23,29 +20,29 @@ import { ConfirmDialog } from '../../components/common/ConfirmDialog.jsx';
 import { SkeletonTableRows } from '../../components/common/LoadingSkeleton.jsx';
 import { EmptyState } from '../../components/common/EmptyState.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
+import { useAuth } from '../../hooks/useAuth.jsx';
 import { MAJORS } from '../../constants/roles.js';
 import { formatShortDate } from '../../utils/formatDate.js';
+import { StarRating } from '../../components/reviews/StarRating.jsx';
 
 export function ManagePortfolioPage() {
   const toast = useToast();
+  const { user, isAdmin, isStudent } = useAuth();
 
   const [portfolios, setPortfolios] = useState([]);
   const [categories, setCategories] = useState([]);
   const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
 
-  // Filters
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [major, setMajor] = useState('');
   const [page, setPage] = useState(1);
 
-  // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedPortfolio, setSelectedPortfolio] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Load categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -61,14 +58,19 @@ export function ManagePortfolioPage() {
   const fetchPortfolios = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await portfolioService.getPortfolios({
+      const params = {
         page,
         limit: 10,
         search,
         status,
         major,
         sortBy: 'latest',
-      });
+      };
+      // Murid hanya melihat karya miliknya
+      if (isStudent && user?.id) {
+        params.owner_id = user.id;
+      }
+      const res = await portfolioService.getPortfolios(params, user);
       if (res.success) {
         setPortfolios(res.data || []);
         setMeta(res.meta || { page: 1, limit: 10, total: 0, totalPages: 1 });
@@ -78,7 +80,7 @@ export function ManagePortfolioPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, status, major, toast]);
+  }, [page, search, status, major, toast, isStudent, user]);
 
   useEffect(() => {
     fetchPortfolios();
@@ -93,7 +95,7 @@ export function ManagePortfolioPage() {
     if (!selectedPortfolio) return;
     setIsDeleting(true);
     try {
-      const res = await portfolioService.deletePortfolio(selectedPortfolio.id);
+      const res = await portfolioService.deletePortfolio(selectedPortfolio.id, user);
       if (res.success) {
         toast.success(res.message);
         setDeleteModalOpen(false);
@@ -121,19 +123,22 @@ export function ManagePortfolioPage() {
     return acc;
   }, {});
 
+  // Apakah user boleh edit/hapus item ini
+  const canEdit = (item) => isAdmin || (isStudent && item.owner_id === user?.id);
+
+  const pageTitle = isStudent ? 'Daftar Karya Saya' : 'Daftar Portofolio Karya Siswa';
+  const totalDesc = isStudent
+    ? `${meta.total} karya yang kamu buat.`
+    : `Total ${meta.total} karya terdata di seluruh jurusan kejuruan.`;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#0F172A] font-heading">
-            Daftar Portofolio Karya Siswa
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Total {meta.total} karya terdata di seluruh jurusan kejuruan.
-          </p>
+          <h2 className="text-2xl font-bold text-[#0F172A] font-heading">{pageTitle}</h2>
+          <p className="text-xs text-slate-500 mt-0.5">{totalDesc}</p>
         </div>
-
         <Link to="/admin/portofolio/tambah">
           <Button variant="primary" size="md" icon={Plus}>
             Tambah Portofolio
@@ -145,10 +150,7 @@ export function ManagePortfolioPage() {
       <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center gap-3">
         <SearchBar
           value={search}
-          onChange={(val) => {
-            setSearch(val);
-            setPage(1);
-          }}
+          onChange={(val) => { setSearch(val); setPage(1); }}
           placeholder="Cari judul, nama siswa, atau teknologi..."
           className="flex-1"
         />
@@ -156,10 +158,7 @@ export function ManagePortfolioPage() {
         <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
           <Select
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
             options={[
               { value: '', label: 'Semua Status' },
               { value: 'published', label: 'Dipublikasi' },
@@ -168,18 +167,18 @@ export function ManagePortfolioPage() {
             className="w-full sm:w-40"
           />
 
-          <Select
-            value={major}
-            onChange={(e) => {
-              setMajor(e.target.value);
-              setPage(1);
-            }}
-            options={[
-              { value: '', label: 'Semua Jurusan' },
-              ...MAJORS.map((m) => ({ value: m, label: m })),
-            ]}
-            className="w-full sm:w-48"
-          />
+          {/* Filter jurusan hanya untuk admin */}
+          {isAdmin && (
+            <Select
+              value={major}
+              onChange={(e) => { setMajor(e.target.value); setPage(1); }}
+              options={[
+                { value: '', label: 'Semua Jurusan' },
+                ...MAJORS.map((m) => ({ value: m, label: m })),
+              ]}
+              className="w-full sm:w-48"
+            />
+          )}
 
           {(search || status || major) && (
             <Button
@@ -195,16 +194,17 @@ export function ManagePortfolioPage() {
         </div>
       </div>
 
-      {/* Table Data */}
+      {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-700">
             <thead className="bg-[#F5F8FF] text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
               <tr>
                 <th className="py-3.5 px-6">Karya</th>
-                <th className="py-3.5 px-6">Siswa & Kelas</th>
-                <th className="py-3.5 px-6">Jurusan & Kategori</th>
+                <th className="py-3.5 px-6">Siswa &amp; Kelas</th>
+                {isAdmin && <th className="py-3.5 px-6">Jurusan &amp; Kategori</th>}
                 <th className="py-3.5 px-6">Tahun</th>
+                <th className="py-3.5 px-6">Rating</th>
                 <th className="py-3.5 px-6">Status</th>
                 <th className="py-3.5 px-6 text-right">Aksi</th>
               </tr>
@@ -214,12 +214,16 @@ export function ManagePortfolioPage() {
                 <SkeletonTableRows count={6} />
               ) : portfolios.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12">
+                  <td colSpan={isAdmin ? 7 : 6} className="py-12">
                     <EmptyState
-                      title="Tidak Ada Data Portofolio"
-                      description="Tidak ada data portofolio yang cocok dengan filter atau pencarian Anda."
-                      actionLabel="Reset Filter"
-                      onAction={handleResetFilters}
+                      title={isStudent ? 'Belum Ada Karya' : 'Tidak Ada Data Portofolio'}
+                      description={
+                        isStudent
+                          ? 'Kamu belum menambahkan karya. Klik "Tambah Portofolio" untuk memulai.'
+                          : 'Tidak ada data portofolio yang cocok dengan filter atau pencarian Anda.'
+                      }
+                      actionLabel={isStudent ? 'Tambah Karya Pertama' : 'Reset Filter'}
+                      onAction={isStudent ? undefined : handleResetFilters}
                     />
                   </td>
                 </tr>
@@ -246,7 +250,7 @@ export function ManagePortfolioPage() {
                             {item.title}
                           </Link>
                           <div className="flex items-center gap-2 mt-1">
-                            {item.is_featured && (
+                            {item.is_featured && isAdmin && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                                 <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
                                 Unggulan
@@ -266,20 +270,34 @@ export function ManagePortfolioPage() {
                       <p className="text-[11px] text-slate-400">{item.class_name}</p>
                     </td>
 
-                    {/* Major & Category */}
-                    <td className="py-4 px-6">
-                      <p className="text-xs text-slate-700 truncate max-w-[160px]">{item.major}</p>
-                      <p className="text-[11px] text-blue-600 font-medium">
-                        {categoryMap[item.category_id] || 'Kategori Lain'}
-                      </p>
-                    </td>
+                    {/* Major & Category — admin only */}
+                    {isAdmin && (
+                      <td className="py-4 px-6">
+                        <p className="text-xs text-slate-700 truncate max-w-[160px]">{item.major}</p>
+                        <p className="text-[11px] text-blue-600 font-medium">
+                          {categoryMap[item.category_id] || 'Kategori Lain'}
+                        </p>
+                      </td>
+                    )}
 
                     {/* Year */}
-                    <td className="py-4 px-6 text-xs text-slate-600 font-medium">
-                      {item.year}
+                    <td className="py-4 px-6 text-xs text-slate-600 font-medium">{item.year}</td>
+
+                    {/* Rating */}
+                    <td className="py-4 px-6">
+                      {item.rating_count > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <StarRating value={item.rating_avg} readonly size="sm" />
+                          <span className="text-[11px] text-slate-500">
+                            ({item.rating_count})
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-slate-400 italic">Belum ada</span>
+                      )}
                     </td>
 
-                    {/* Status Badge */}
+                    {/* Status */}
                     <td className="py-4 px-6">
                       <StatusBadge status={item.status} />
                     </td>
@@ -296,22 +314,26 @@ export function ManagePortfolioPage() {
                           <Eye className="w-4 h-4" />
                         </Link>
 
-                        <Link
-                          to={`/admin/portofolio/${item.id}/edit`}
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors"
-                          title="Edit Portofolio"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
+                        {canEdit(item) && (
+                          <>
+                            <Link
+                              to={`/admin/portofolio/${item.id}/edit`}
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors"
+                              title="Edit Portofolio"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
 
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDelete(item)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                          title="Hapus Portofolio"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDelete(item)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                              title="Hapus Portofolio"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -335,7 +357,6 @@ export function ManagePortfolioPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmDialog
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}

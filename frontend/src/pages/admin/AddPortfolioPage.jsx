@@ -5,11 +5,13 @@ import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
 import { PortfolioForm } from '../../components/forms/PortfolioForm.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
+import { useAuth } from '../../hooks/useAuth.jsx';
 import { LoadingSpinner } from '../../components/common/LoadingSkeleton.jsx';
 
 export function AddPortfolioPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
 
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export function AddPortfolioPage() {
   const handleSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      const res = await portfolioService.createPortfolio(formData);
+      const res = await portfolioService.createPortfolio(formData, user);
       if (res.success) {
         toast.success(res.message || 'Portofolio berhasil ditambahkan!');
         navigate('/admin/portofolio');
@@ -52,7 +54,6 @@ export function AddPortfolioPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back & Breadcrumb */}
       <div>
         <Link
           to="/admin/portofolio"
@@ -65,7 +66,7 @@ export function AddPortfolioPage() {
           Tambah Portofolio Karya Baru
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Formulir untuk mempublikasikan proyek hasil karya murid ke dalam etalase resmi sekolah.
+          Formulir untuk mempublikasikan proyek hasil karya ke dalam galeri sekolah.
         </p>
       </div>
 
@@ -74,6 +75,7 @@ export function AddPortfolioPage() {
         onSubmit={handleSubmit}
         isSubmitting={submitting}
         isEdit={false}
+        currentUser={user}
       />
     </div>
   );

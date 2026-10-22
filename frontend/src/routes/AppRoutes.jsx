@@ -36,14 +36,20 @@ export function AppRoutes() {
       {/* Rute Otentikasi */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Rute Terlindungi (Admin) */}
-      <Route element={<ProtectedRoute />}>
+      {/* Rute hanya Admin */}
+      <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<DashboardPage />} />
+          <Route path="/admin/kategori" element={<ManageCategoryPage />} />
+        </Route>
+      </Route>
+
+      {/* Rute Admin & Murid */}
+      <Route element={<ProtectedRoute allowedRoles={['admin', 'student']} />}>
+        <Route element={<AdminLayout />}>
           <Route path="/admin/portofolio" element={<ManagePortfolioPage />} />
           <Route path="/admin/portofolio/tambah" element={<AddPortfolioPage />} />
           <Route path="/admin/portofolio/:id/edit" element={<EditPortfolioPage />} />
-          <Route path="/admin/kategori" element={<ManageCategoryPage />} />
         </Route>
       </Route>
 

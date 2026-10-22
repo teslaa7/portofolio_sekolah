@@ -33,6 +33,7 @@ export function PortfolioFilter({
     { value: 'oldest', label: 'Terlama' },
     { value: 'a-z', label: 'Judul (A - Z)' },
     { value: 'z-a', label: 'Judul (Z - A)' },
+    { value: 'rating', label: 'Rating Tertinggi' },
   ];
 
   const hasActiveFilters = Boolean(

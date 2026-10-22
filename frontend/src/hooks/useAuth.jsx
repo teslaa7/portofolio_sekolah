@@ -56,6 +56,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     isAuthenticated: Boolean(user),
+    isAdmin: user?.role === 'admin',
+    isStudent: user?.role === 'student',
     isLoading,
     login,
     logout,

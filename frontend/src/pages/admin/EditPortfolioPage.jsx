@@ -5,6 +5,7 @@ import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
 import { PortfolioForm } from '../../components/forms/PortfolioForm.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
+import { useAuth } from '../../hooks/useAuth.jsx';
 import { LoadingSpinner } from '../../components/common/LoadingSkeleton.jsx';
 import { ErrorState } from '../../components/common/ErrorState.jsx';
 
@@ -12,6 +13,7 @@ export function EditPortfolioPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { user, isStudent } = useAuth();
 
   const [portfolio, setPortfolio] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -29,12 +31,17 @@ export function EditPortfolioPage() {
           portfolioService.getPortfolioById(id),
         ]);
 
-        if (catRes.success) {
-          setCategories(catRes.data || []);
-        }
+        if (catRes.success) setCategories(catRes.data || []);
 
         if (portRes.success && portRes.data) {
-          setPortfolio(portRes.data);
+          const p = portRes.data;
+          // Murid tidak boleh edit karya orang lain
+          if (isStudent && p.owner_id !== user?.id) {
+            toast.error('Anda hanya dapat mengedit karya milik sendiri.');
+            navigate('/admin/portofolio', { replace: true });
+            return;
+          }
+          setPortfolio(p);
         } else {
           setError(portRes.message || 'Portofolio tidak ditemukan');
         }
@@ -44,14 +51,13 @@ export function EditPortfolioPage() {
         setLoading(false);
       }
     };
-
     loadData();
-  }, [id]);
+  }, [id, isStudent, user, navigate, toast]);
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      const res = await portfolioService.updatePortfolio(id, formData);
+      const res = await portfolioService.updatePortfolio(id, formData, user);
       if (res.success) {
         toast.success(res.message || 'Portofolio berhasil diperbarui!');
         navigate('/admin/portofolio');
@@ -65,9 +71,7 @@ export function EditPortfolioPage() {
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner text="Memuat data portofolio untuk diedit..." />;
-  }
+  if (loading) return <LoadingSpinner text="Memuat data portofolio untuk diedit..." />;
 
   if (error || !portfolio) {
     return (
@@ -83,7 +87,6 @@ export function EditPortfolioPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back & Header */}
       <div>
         <Link
           to="/admin/portofolio"
@@ -106,6 +109,7 @@ export function EditPortfolioPage() {
         onSubmit={handleSubmit}
         isSubmitting={submitting}
         isEdit={true}
+        currentUser={user}
       />
     </div>
   );

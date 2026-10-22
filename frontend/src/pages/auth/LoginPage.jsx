@@ -7,6 +7,28 @@ import { Input } from '../../components/common/Input.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { isValidEmail } from '../../utils/validators.js';
 
+/**
+ * Tentukan halaman tujuan setelah login berdasarkan role.
+ */
+function getDefaultRedirect(role) {
+  if (role === 'student') return '/admin/portofolio';
+  return '/admin';
+}
+
+/**
+ * Cek apakah `path` boleh diakses oleh `role`.
+ * Murid tidak boleh ke /admin (dashboard) atau /admin/kategori.
+ */
+function isPathAllowedForRole(path, role) {
+  if (role === 'student') {
+    const forbidden = ['/admin', '/admin/kategori'];
+    if (forbidden.includes(path)) return false;
+    if (path.startsWith('/admin/portofolio')) return true;
+    return false;
+  }
+  return true; // admin boleh ke mana saja
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,19 +41,25 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Destination after successful login
-  const from = location.state?.from?.pathname || '/admin';
+  const from = location.state?.from?.pathname || null;
 
-  // If already authenticated, redirect to /admin
+  // Jika sudah login, redirect ke halaman default role
   React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/admin', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  const handleAutofillDemo = () => {
+  const handleAutofillAdmin = () => {
     setEmail('admin@sekolah.sch.id');
     setPassword('admin123');
+    setErrors({});
+    setAuthError('');
+  };
+
+  const handleAutofillStudent = () => {
+    setEmail('ahmad@siswa.sch.id');
+    setPassword('siswa123');
     setErrors({});
     setAuthError('');
   };
@@ -46,11 +74,9 @@ export function LoginPage() {
     } else if (!isValidEmail(email)) {
       newErrors.email = 'Format email tidak valid';
     }
-
     if (!password) {
       newErrors.password = 'Password wajib diisi';
     }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -60,8 +86,12 @@ export function LoginPage() {
     try {
       const res = await login(email, password);
       if (res.success) {
-        toast.success(`Selamat datang kembali, ${res.user.name}!`);
-        navigate(from, { replace: true });
+        toast.success(`Selamat datang, ${res.user.name}!`);
+        // Gunakan `from` hanya jika rute itu boleh untuk role ini
+        const defaultPath = getDefaultRedirect(res.user.role);
+        const targetPath =
+          from && isPathAllowedForRole(from, res.user.role) ? from : defaultPath;
+        navigate(targetPath, { replace: true });
       } else {
         setAuthError(res.message || 'Email atau password salah');
       }
@@ -75,7 +105,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F5F8FF] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
-        {/* Back to Home Link */}
+        {/* Back to Home */}
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-[#0B2E6B] mb-6 transition-colors"
@@ -90,38 +120,54 @@ export function LoginPage() {
             <GraduationCap className="w-8 h-8" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] font-heading">
-            Masuk Panel Guru
+            Masuk Panel Portofolio
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            Akses kurasi, kelola portofolio karya, dan atur kategori sekolah.
+            Akses panel guru & murid untuk mengelola portofolio karya sekolah.
           </p>
         </div>
 
         {/* Demo Credentials Box */}
-        <div className="mt-6 bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 text-xs text-amber-900 shadow-xs">
-          <div className="flex items-start justify-between gap-2">
+        <div className="mt-6 bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 text-xs text-amber-900 shadow-xs space-y-3">
+          <p className="font-bold flex items-center gap-1.5 text-amber-800">
+            <KeyRound className="w-4 h-4 text-amber-600" />
+            <span>Akun Demo:</span>
+          </p>
+
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="font-bold flex items-center gap-1.5 text-amber-800">
-                <KeyRound className="w-4 h-4 text-amber-600" />
-                <span>Akun Demo Guru (Admin):</span>
-              </p>
-              <p className="mt-1 font-mono text-[11px] text-slate-700">
-                Email: <span className="font-bold text-[#0B2E6B]">admin@sekolah.sch.id</span>
-                <br />
-                Password: <span className="font-bold text-[#0B2E6B]">admin123</span>
+              <p className="font-semibold text-amber-800">Admin Guru</p>
+              <p className="font-mono text-[11px] text-slate-700">
+                admin@sekolah.sch.id / admin123
               </p>
             </div>
             <button
               type="button"
-              onClick={handleAutofillDemo}
+              onClick={handleAutofillAdmin}
               className="px-2.5 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 font-semibold text-amber-900 text-[11px] transition-colors shrink-0 shadow-xs cursor-pointer"
             >
-              Isi Otomatis
+              Isi Akun Admin
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-200/60">
+            <div>
+              <p className="font-semibold text-amber-800">Akun Murid</p>
+              <p className="font-mono text-[11px] text-slate-700">
+                ahmad@siswa.sch.id / siswa123
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAutofillStudent}
+              className="px-2.5 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 font-semibold text-blue-900 text-[11px] transition-colors shrink-0 shadow-xs cursor-pointer"
+            >
+              Isi Akun Murid
             </button>
           </div>
         </div>
 
-        {/* Card Form */}
+        {/* Form Card */}
         <div className="mt-6 bg-white py-8 px-6 sm:px-10 shadow-xl rounded-3xl border border-slate-200/80">
           {authError && (
             <div className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-800 font-medium">
@@ -132,14 +178,14 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
-              label="Email Guru / Administrator"
+              label="Email"
               type="email"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
                 if (errors.email) setErrors((prev) => ({ ...prev, email: null }));
               }}
-              placeholder="admin@sekolah.sch.id"
+              placeholder="email@sekolah.sch.id"
               leftIcon={Mail}
               error={errors.email}
               required
@@ -167,13 +213,13 @@ export function LoginPage() {
               icon={LogIn}
               isLoading={loading}
             >
-              Masuk ke Dashboard
+              Masuk ke Panel
             </Button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-400">
-          Sistem Galeri Portofolio Sekolah • Akses Khusus Guru & Tenaga Kependidikan
+          Sistem Galeri Portofolio Sekolah • Akses Guru & Murid
         </p>
       </div>
     </div>

@@ -7,11 +7,10 @@ import {
   Star,
   Plus,
   ArrowRight,
-  ExternalLink,
-  Edit,
   Eye,
+  Edit,
   BarChart3,
-  Tags,
+  MessageSquare,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -82,8 +81,8 @@ export function DashboardPage() {
         </Link>
       </div>
 
-      {/* 4 Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* 6 Summary Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
         <StatCard
           title="Total Karya"
           value={summary.total}
@@ -92,7 +91,6 @@ export function DashboardPage() {
           badgeText="Semua data"
           description="Seluruh proyek tersimpan"
         />
-
         <StatCard
           title="Karya Dipublikasi"
           value={summary.published}
@@ -101,7 +99,6 @@ export function DashboardPage() {
           badgeText="Tampil Publik"
           description="Dapat diakses umum"
         />
-
         <StatCard
           title="Karya Draft"
           value={summary.draft}
@@ -110,7 +107,6 @@ export function DashboardPage() {
           badgeText="Perlu Ditinjau"
           description="Hanya terlihat di admin"
         />
-
         <StatCard
           title="Karya Unggulan"
           value={summary.featured}
@@ -118,6 +114,22 @@ export function DashboardPage() {
           badgeColor="indigo"
           badgeText="Highlight"
           description="Di beranda utama"
+        />
+        <StatCard
+          title="Total Ulasan"
+          value={summary.totalReviews}
+          icon={MessageSquare}
+          badgeColor="blue"
+          badgeText="Dari Pengunjung"
+          description="Ulasan & rating masuk"
+        />
+        <StatCard
+          title="Rata-rata Rating"
+          value={summary.avgRating > 0 ? `${summary.avgRating.toFixed(1)} ★` : '—'}
+          icon={Star}
+          badgeColor="amber"
+          badgeText="Global"
+          description="Semua portofolio"
         />
       </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Star, User, Calendar, Tag } from 'lucide-react';
-import { StatusBadge } from '../common/StatusBadge.jsx';
+import { ExternalLink, Star, User } from 'lucide-react';
+import { StarRating } from '../reviews/StarRating.jsx';
 
 /**
  * PortfolioCard component
@@ -18,6 +18,8 @@ export function PortfolioCard({ portfolio, categoryName = '' }) {
     thumbnail_url,
     year,
     is_featured,
+    rating_avg = 0,
+    rating_count = 0,
   } = portfolio;
 
   return (
@@ -101,22 +103,39 @@ export function PortfolioCard({ portfolio, categoryName = '' }) {
           </div>
         )}
 
-        {/* Footer Meta: Student & Class */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center gap-1.5 truncate pr-2">
-            <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="font-medium text-slate-700 truncate">{student_name}</span>
-            <span className="text-slate-300">•</span>
-            <span className="truncate text-slate-500">{class_name}</span>
+        {/* Footer Meta: Rating + Student & Class */}
+        <div className="pt-3 border-t border-slate-100 space-y-2">
+          {/* Rating row */}
+          <div className="flex items-center gap-1.5">
+            {rating_count > 0 ? (
+              <>
+                <StarRating value={rating_avg} readonly size="sm" />
+                <span className="text-xs text-slate-500 font-medium">
+                  {rating_avg.toFixed(1)}
+                </span>
+                <span className="text-xs text-slate-400">({rating_count})</span>
+              </>
+            ) : (
+              <span className="text-xs text-slate-400 italic">Belum ada rating</span>
+            )}
           </div>
 
-          <Link
-            to={`/portofolio/${slug}`}
-            className="text-[#0B2E6B] font-semibold hover:text-[#1E40AF] inline-flex items-center gap-1 shrink-0"
-          >
-            <span>Detail</span>
-            <ExternalLink className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <div className="flex items-center gap-1.5 truncate pr-2">
+              <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="font-medium text-slate-700 truncate">{student_name}</span>
+              <span className="text-slate-300">•</span>
+              <span className="truncate text-slate-500">{class_name}</span>
+            </div>
+
+            <Link
+              to={`/portofolio/${slug}`}
+              className="text-[#0B2E6B] font-semibold hover:text-[#1E40AF] inline-flex items-center gap-1 shrink-0"
+            >
+              <span>Detail</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </div>
     </article>

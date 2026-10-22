@@ -9,35 +9,54 @@ import {
   LogOut,
   GraduationCap,
   X,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
 
 export function AdminSidebar({ isOpen, onClose }) {
-  const { logout, user } = useAuth();
+  const { logout, user, isAdmin, isStudent } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
 
   const handleLogout = async () => {
     await logout();
-    toast.info('Anda telah keluar dari panel admin.');
+    toast.info('Anda telah keluar dari panel.');
     navigate('/login');
   };
 
-  const navLinks = [
+  // Link logo menuju /admin/portofolio untuk murid, /admin untuk admin
+  const homeLink = isStudent ? '/admin/portofolio' : '/admin';
+
+  // Menu berdasarkan role
+  const adminLinks = [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard, end: true },
     {
       label: 'Kelola Portofolio',
       path: '/admin/portofolio',
       icon: FolderGit2,
       end: false,
-      // Jangan aktif saat di halaman Tambah; halaman Edit (:id/edit) tetap aktif
       excludePaths: ['/admin/portofolio/tambah'],
     },
     { label: 'Tambah Portofolio', path: '/admin/portofolio/tambah', icon: PlusCircle, end: true },
     { label: 'Kelola Kategori', path: '/admin/kategori', icon: Tags, end: false },
   ];
+
+  const studentLinks = [
+    {
+      label: 'Karya Saya',
+      path: '/admin/portofolio',
+      icon: BookOpen,
+      end: false,
+      excludePaths: ['/admin/portofolio/tambah'],
+    },
+    { label: 'Tambah Portofolio', path: '/admin/portofolio/tambah', icon: PlusCircle, end: true },
+  ];
+
+  const navLinks = isStudent ? studentLinks : adminLinks;
+
+  const panelLabel = isStudent ? 'Panel Murid' : 'Panel Guru & Admin';
 
   return (
     <>
@@ -49,7 +68,6 @@ export function AdminSidebar({ isOpen, onClose }) {
         />
       )}
 
-      {/* Sidebar container */}
       <aside
         className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#0B2E6B] text-white flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -57,7 +75,7 @@ export function AdminSidebar({ isOpen, onClose }) {
       >
         {/* Brand Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-blue-900/80">
-          <Link to="/admin" className="flex items-center gap-3">
+          <Link to={homeLink} className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white text-[#0B2E6B] flex items-center justify-center shadow-md">
               <GraduationCap className="w-6 h-6 text-[#0B2E6B]" />
             </div>
@@ -66,12 +84,11 @@ export function AdminSidebar({ isOpen, onClose }) {
                 Portofolio<span className="text-[#F2B705]">Sekolah</span>
               </span>
               <span className="text-[10px] text-blue-200/80 uppercase font-semibold tracking-wider">
-                Panel Guru & Admin
+                {panelLabel}
               </span>
             </div>
           </Link>
 
-          {/* Close button on mobile */}
           <button
             onClick={onClose}
             className="p-1 rounded-lg text-blue-200 hover:text-white hover:bg-blue-800 lg:hidden"
@@ -84,13 +101,16 @@ export function AdminSidebar({ isOpen, onClose }) {
         {/* User Card */}
         <div className="p-4 mx-4 my-4 rounded-xl bg-blue-900/50 border border-blue-800/60 flex items-center gap-3">
           <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'}
-            alt={user?.name || 'Admin'}
+            src={
+              user?.avatar ||
+              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+            }
+            alt={user?.name || 'Pengguna'}
             className="w-10 h-10 rounded-full object-cover border-2 border-[#F2B705]"
           />
           <div className="overflow-hidden">
-            <h5 className="text-sm font-semibold text-white truncate">{user?.name || 'Guru Admin'}</h5>
-            <p className="text-xs text-blue-200/80 truncate">{user?.email || 'admin@sekolah.sch.id'}</p>
+            <h5 className="text-sm font-semibold text-white truncate">{user?.name || 'Pengguna'}</h5>
+            <p className="text-xs text-blue-200/80 truncate">{user?.email || ''}</p>
           </div>
         </div>
 
@@ -101,7 +121,6 @@ export function AdminSidebar({ isOpen, onClose }) {
           </p>
           {navLinks.map((item) => {
             const Icon = item.icon;
-            // Hitung isActive manual agar bisa menerapkan excludePaths
             const excluded = item.excludePaths?.includes(location.pathname) ?? false;
             return (
               <NavLink
