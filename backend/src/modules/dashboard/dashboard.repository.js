@@ -36,7 +36,10 @@ async function getPortfolioSummary(db) {
       COUNT(*) AS total,
       SUM(status = 'published') AS published,
       SUM(status = 'draft') AS draft,
-      SUM(is_featured = 1) AS featured
+      SUM(is_featured = 1) AS featured,
+      (SELECT COUNT(*) FROM reviews) AS total_reviews,
+      (SELECT IFNULL(AVG(rating), 0) FROM reviews) AS avg_rating,
+      (SELECT COUNT(*) FROM users WHERE role = 'student') AS students_count
     FROM portfolios
   `);
   const row = rows[0];
@@ -45,6 +48,9 @@ async function getPortfolioSummary(db) {
     published: Number(row.published),
     draft: Number(row.draft),
     featured: Number(row.featured),
+    totalReviews: Number(row.total_reviews),
+    avgRating: Number(Number(row.avg_rating).toFixed(1)),
+    studentsCount: Number(row.students_count),
   };
 }
 

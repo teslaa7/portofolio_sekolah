@@ -7,8 +7,9 @@ const { safeJsonParse } = require('../../utils/json');
  * @param {object} row
  * @returns {object}
  */
-function mapPortfolio(row) {
-  return {
+function mapPortfolio(row, { includeScreenshots = true } = {}) {
+  const ratingAvg = Number(row.rating_avg) || 0;
+  const portfolio = {
     id: Number(row.id),
     title: row.title,
     slug: row.slug,
@@ -27,12 +28,20 @@ function mapPortfolio(row) {
     year: Number(row.year),
     status: row.status,
     is_featured: Boolean(row.is_featured),
+    owner_id: row.owner_id === null || row.owner_id === undefined ? null : Number(row.owner_id),
+    owner_name: row.owner_name || '',
+    rating_avg: Number(ratingAvg.toFixed(1)),
+    rating_count: Number(row.rating_count) || 0,
     created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
   };
+  // Pada endpoint LIST, screenshots (base64) dihilangkan untuk menghemat payload.
+  if (!includeScreenshots) delete portfolio.screenshots;
+  return portfolio;
 }
 
-// Base SELECT dengan JOIN ke categories
+// Base SELECT dengan JOIN ke categories + agregat rating dari reviews.
+// Agregat dihitung lewat subquery (1:1 per portofolio) agar tidak menggandakan baris.
 const BASE_SELECT = `
   SELECT
     p.id, p.title, p.slug, p.short_description, p.description,
@@ -40,9 +49,19 @@ const BASE_SELECT = `
     c.name AS category_name,
     p.tech_stack, p.project_url, p.repo_url, p.thumbnail_url,
     p.screenshots, p.year, p.status, p.is_featured,
-    p.created_at, p.updated_at
+    p.owner_id,
+    u.name AS owner_name,
+    p.created_at, p.updated_at,
+    IFNULL(r.rating_avg, 0) AS rating_avg,
+    IFNULL(r.rating_count, 0) AS rating_count
   FROM portfolios p
   LEFT JOIN categories c ON p.category_id = c.id
+  LEFT JOIN users u ON p.owner_id = u.id
+  LEFT JOIN (
+    SELECT portfolio_id, AVG(rating) AS rating_avg, COUNT(*) AS rating_count
+    FROM reviews
+    GROUP BY portfolio_id
+  ) r ON r.portfolio_id = p.id
 `;
 
 /**
@@ -68,18 +87,37 @@ const SORT_MAP = {
  * @param {object} params
  * @param {boolean} isAdmin - jika false, paksa status='published'
  */
-async function findPortfolios(db, params, isAdmin = false) {
-  const { page, limit, offset, search, major, category_id, year, status, is_featured, sortBy } = params;
+async function findPortfolios(db, params, actor = null) {
+  const { page, limit, offset, search, major, category_id, year, status, is_featured, sortBy, mine, owner_id } = params;
+
+  const isAdmin = Boolean(actor && actor.role === 'admin');
+  const mineRequested = mine === true || mine === 'true';
+  const ownerIdParam = owner_id ? Number(owner_id) : null;
 
   const conditions = [];
   const values = [];
 
-  // Paksa published untuk non-admin
-  if (!isAdmin) {
+  if (mineRequested && actor) {
+    // mine=true: batasi ke owner_id pemanggil, SEMUA status
+    conditions.push('p.owner_id = ?');
+    values.push(Number(actor.id));
+  } else if (isAdmin && ownerIdParam) {
+    // owner_id=<id> hanya berlaku untuk admin
+    conditions.push('p.owner_id = ?');
+    values.push(ownerIdParam);
+    if (status) {
+      conditions.push('p.status = ?');
+      values.push(status);
+    }
+  } else if (isAdmin) {
+    // admin tanpa mine/owner_id: semua status; filter status opsional
+    if (status) {
+      conditions.push('p.status = ?');
+      values.push(status);
+    }
+  } else {
+    // tamu / murid (tanpa mine): hanya published
     conditions.push("p.status = 'published'");
-  } else if (status) {
-    conditions.push('p.status = ?');
-    values.push(status);
   }
 
   if (search && search.trim()) {
@@ -127,7 +165,7 @@ async function findPortfolios(db, params, isAdmin = false) {
     [...values, limit, offset]
   );
 
-  return { rows: rows.map(mapPortfolio), total };
+  return { rows: rows.map((row) => mapPortfolio(row, { includeScreenshots: false })), total };
 }
 
 /**
@@ -166,13 +204,14 @@ async function insertPortfolio(db, data) {
     `INSERT INTO portfolios
       (title, slug, short_description, description, student_name, class_name, major,
        category_id, tech_stack, project_url, repo_url, thumbnail_url, screenshots,
-       year, status, is_featured)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       year, status, is_featured, owner_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.title, data.slug, data.short_description, data.description,
       data.student_name, data.class_name, data.major,
       data.category_id, data.tech_stack, data.project_url, data.repo_url,
       data.thumbnail_url, data.screenshots, data.year, data.status, data.is_featured ? 1 : 0,
+      data.owner_id === undefined ? null : data.owner_id,
     ]
   );
   return result.insertId;
@@ -188,7 +227,7 @@ async function updatePortfolioById(db, id, data) {
   const fields = [
     'title', 'slug', 'short_description', 'description', 'student_name',
     'class_name', 'major', 'category_id', 'tech_stack', 'project_url',
-    'repo_url', 'thumbnail_url', 'screenshots', 'year', 'status', 'is_featured',
+    'repo_url', 'thumbnail_url', 'screenshots', 'year', 'status', 'is_featured', 'owner_id',
   ];
 
   for (const field of fields) {

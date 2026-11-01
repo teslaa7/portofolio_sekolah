@@ -19,7 +19,7 @@
     "mysql2": "^3.9.8"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "pino-pretty": "^13.2.0"

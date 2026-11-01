@@ -10,7 +10,8 @@ module.exports = fp(async function (app) {
       // Izinkan request tanpa origin (curl, Postman, server-to-server)
       if (!origin) return cb(null, true);
       if (env.CORS_ORIGIN.includes(origin)) return cb(null, true);
-      cb(new Error(`Origin ${origin} tidak diizinkan oleh CORS`), false);
+      // Origin tidak diizinkan: tolak tanpa melempar error
+      return cb(null, false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

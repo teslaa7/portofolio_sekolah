@@ -1,20 +1,43 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Portofolio Sekolah — Frontend
 
-# Run and deploy your AI Studio app
+Galeri karya siswa dengan panel admin (guru) dan panel murid. Dibangun dengan React 19 + Vite + Tailwind CSS, terhubung ke backend Fastify (`/backend`).
 
-This contains everything you need to run your app locally.
+## Prasyarat
 
-View your app in AI Studio: https://ai.studio/apps/f0c78eb2-1f39-4a6b-8a4a-49b5b6748054
+- Node.js >= 20.19.0
+- Backend Fastify berjalan di `http://localhost:3001` (lihat folder `/backend`)
 
-## Run Locally
+## Menjalankan
 
-**Prerequisites:**  Node.js
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
 
+Aplikasi berjalan di `http://localhost:3000`. Base URL backend diatur via `VITE_API_BASE_URL` (default `http://localhost:3001/api`).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Akun Demo
+
+| Role  | Email                    | Password   |
+|-------|--------------------------|------------|
+| Admin | admin@sekolah.sch.id     | admin123   |
+| Murid | ahmad@siswa.sch.id       | siswa123   |
+| Murid | siti@siswa.sch.id        | siswa123   |
+| Murid | rani@siswa.sch.id        | siswa123   |
+
+## Fitur
+
+- **Publik**: galeri karya, detail portofolio + ulasan, kirim ulasan sebagai tamu.
+- **Murid**: "Karya Saya" — tambah/edit/hapus karya milik sendiri (tanpa opsi featured).
+- **Admin**: kelola semua karya, kategori, akun murid (`/admin/murid`), dan lihat dashboard.
+
+Token disimpan di `localStorage` (`portofolio_token`); sesi dipulihkan via `GET /auth/me` saat aplikasi dimuat.
+
+## Build
+
+```bash
+npm run build   # output ke dist/
+npm run preview # pratinjau build
+```

@@ -1,6 +1,6 @@
 'use strict';
 
-const requireAdmin = require('../../middlewares/requireAdmin');
+const requireRole = require('../../middlewares/requireRole');
 const {
   listHandler,
   relatedHandler,
@@ -12,46 +12,35 @@ const {
 } = require('./portfolios.controller');
 const { createPortfolioBody, updatePortfolioBody } = require('./portfolios.schema');
 
+// Verifikasi JWT opsional: token valid -> req.user terisi; invalid/tidak ada -> tamu.
+const optionalAuth = async (req, _reply) => {
+  try {
+    await req.jwtVerify();
+  } catch {
+    // lanjut sebagai tamu
+  }
+};
+
 module.exports = async function portfolioRoutes(app) {
-  // ── Publik ──────────────────────────────────────────────────────────────
-  // Daftarkan /related SEBELUM /:slug agar tidak bentrok
+  // ── Publik (token opsional) ───────────────────────────────────────────────
+  // /related didaftarkan SEBELUM /:slug agar tidak bentrok
   app.get('/portfolios/related', relatedHandler);
 
-  // List: publik tapi bisa pakai token admin untuk melihat draft
-  // Gunakan onRequest hook yang coba verify tapi tidak wajib
-  app.get('/portfolios', {
-    preHandler: async (req, _reply) => {
-      try {
-        await req.jwtVerify();
-      } catch {
-        // Token tidak ada atau invalid: lanjut sebagai publik
-      }
-    },
-  }, listHandler);
+  app.get('/portfolios', { preHandler: optionalAuth }, listHandler);
+  app.get('/portfolios/:slug', { preHandler: optionalAuth }, detailBySlugHandler);
 
-  // Detail by slug: sama, coba verify tapi tidak wajib
-  app.get('/portfolios/:slug', {
-    preHandler: async (req, _reply) => {
-      try {
-        await req.jwtVerify();
-      } catch {
-        // lanjut sebagai publik
-      }
-    },
-  }, detailBySlugHandler);
-
-  // ── Admin Only ────────────────────────────────────────────────────────
-  app.get('/admin/portfolios/:id', { preHandler: requireAdmin }, detailByIdHandler);
+  // ── Admin atau Pemilik ──────────────────────────────────────────────────
+  app.get('/admin/portfolios/:id', { preHandler: requireRole('admin', 'student') }, detailByIdHandler);
 
   app.post('/portfolios', {
-    preHandler: requireAdmin,
+    preHandler: requireRole('admin', 'student'),
     schema: { body: createPortfolioBody },
   }, createHandler);
 
   app.put('/portfolios/:id', {
-    preHandler: requireAdmin,
+    preHandler: requireRole('admin', 'student'),
     schema: { body: updatePortfolioBody },
   }, updateHandler);
 
-  app.delete('/portfolios/:id', { preHandler: requireAdmin }, deleteHandler);
+  app.delete('/portfolios/:id', { preHandler: requireRole('admin', 'student') }, deleteHandler);
 };

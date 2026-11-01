@@ -11,6 +11,7 @@ import {
   Edit,
   BarChart3,
   MessageSquare,
+  Users,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -82,7 +83,7 @@ export function DashboardPage() {
       </div>
 
       {/* 6 Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 sm:gap-6">
         <StatCard
           title="Total Karya"
           value={summary.total}
@@ -130,6 +131,14 @@ export function DashboardPage() {
           badgeColor="amber"
           badgeText="Global"
           description="Semua portofolio"
+        />
+        <StatCard
+          title="Total Murid"
+          value={summary.studentsCount}
+          icon={Users}
+          badgeColor="blue"
+          badgeText="Terdaftar"
+          description="Akun siswa terdaftar"
         />
       </div>
 

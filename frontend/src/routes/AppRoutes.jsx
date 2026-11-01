@@ -21,6 +21,7 @@ import { ManagePortfolioPage } from '../pages/admin/ManagePortfolioPage.jsx';
 import { AddPortfolioPage } from '../pages/admin/AddPortfolioPage.jsx';
 import { EditPortfolioPage } from '../pages/admin/EditPortfolioPage.jsx';
 import { ManageCategoryPage } from '../pages/admin/ManageCategoryPage.jsx';
+import { ManageStudentPage } from '../pages/admin/ManageStudentPage.jsx';
 
 export function AppRoutes() {
   return (
@@ -41,6 +42,7 @@ export function AppRoutes() {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<DashboardPage />} />
           <Route path="/admin/kategori" element={<ManageCategoryPage />} />
+          <Route path="/admin/murid" element={<ManageStudentPage />} />
         </Route>
       </Route>
 

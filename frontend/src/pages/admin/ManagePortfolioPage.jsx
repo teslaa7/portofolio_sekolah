@@ -66,11 +66,11 @@ export function ManagePortfolioPage() {
         major,
         sortBy: 'latest',
       };
-      // Murid hanya melihat karya miliknya
-      if (isStudent && user?.id) {
-        params.owner_id = user.id;
+      // Murid hanya melihat karya miliknya (mine=true, izin ditegakkan backend)
+      if (isStudent) {
+        params.mine = true;
       }
-      const res = await portfolioService.getPortfolios(params, user);
+      const res = await portfolioService.getPortfolios(params);
       if (res.success) {
         setPortfolios(res.data || []);
         setMeta(res.meta || { page: 1, limit: 10, total: 0, totalPages: 1 });
@@ -95,7 +95,7 @@ export function ManagePortfolioPage() {
     if (!selectedPortfolio) return;
     setIsDeleting(true);
     try {
-      const res = await portfolioService.deletePortfolio(selectedPortfolio.id, user);
+      const res = await portfolioService.deletePortfolio(selectedPortfolio.id);
       if (res.success) {
         toast.success(res.message);
         setDeleteModalOpen(false);

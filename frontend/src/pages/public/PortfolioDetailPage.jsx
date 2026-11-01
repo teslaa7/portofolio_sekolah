@@ -116,7 +116,7 @@ export function PortfolioDetailPage() {
 
   const handleDeleteReview = async (reviewId) => {
     setIsDeleting(true);
-    const res = await reviewService.deleteReview(reviewId, user);
+    const res = await reviewService.deleteReview(reviewId);
     if (res.success) {
       toast.success('Ulasan berhasil dihapus.');
       await loadReviews(portfolio.id);

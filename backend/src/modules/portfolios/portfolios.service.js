@@ -17,6 +17,10 @@ const {
 // URL regex sederhana (http/https)
 const URL_REGEX = /^https?:\/\/.+/;
 
+// Data URL base64 untuk gambar (jpeg/png/webp). Boleh juga URL http(s) biasa.
+const IMAGE_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+))$/;
+const MAX_IMAGE_LENGTH = 1500000;
+
 /**
  * Validasi URL, kembalikan error jika tidak valid (tapi boleh kosong).
  */
@@ -24,6 +28,22 @@ function validateUrl(value, fieldName) {
   if (!value || value.trim() === '') return null;
   if (!URL_REGEX.test(value.trim())) {
     return { field: fieldName, message: `${fieldName} harus berupa URL http/https yang valid atau dikosongkan.` };
+  }
+  return null;
+}
+
+/**
+ * Validasi gambar (thumbnail / screenshot): boleh URL http(s) atau data URL base64
+ * (jpeg/png/webp). Boleh kosong. Maks ~1.500.000 karakter per gambar.
+ */
+function validateImage(value, fieldName) {
+  if (!value || value.trim() === '') return null;
+  const v = value.trim();
+  if (v.length > MAX_IMAGE_LENGTH) {
+    return { field: fieldName, message: `${fieldName} terlalu besar (maks ${MAX_IMAGE_LENGTH} karakter).` };
+  }
+  if (!IMAGE_URL_REGEX.test(v)) {
+    return { field: fieldName, message: `${fieldName} harus berupa URL http/https atau data URL base64 (jpeg/png/webp).` };
   }
   return null;
 }
@@ -47,9 +67,10 @@ async function generateUniqueSlug(db, title, excludeId = null) {
 /**
  * Mengambil daftar portofolio.
  */
-async function listPortfolios(db, params, isAdmin = false) {
+async function listPortfolios(db, params, actor = null) {
   const { page, limit, offset } = getPagination(params.page, params.limit);
 
+  const isAdmin = Boolean(actor && actor.role === 'admin');
   // Batas limit
   const maxLimit = isAdmin ? 1000 : 100;
   const safeLimit = Math.min(limit, maxLimit);
@@ -57,7 +78,7 @@ async function listPortfolios(db, params, isAdmin = false) {
   const { rows, total } = await findPortfolios(
     db,
     { ...params, page, limit: safeLimit, offset },
-    isAdmin
+    actor
   );
 
   return {
@@ -70,18 +91,27 @@ async function listPortfolios(db, params, isAdmin = false) {
  * Mengambil detail portofolio berdasarkan slug.
  * Non-admin hanya bisa melihat published.
  */
-async function getPortfolioBySlug(db, slug, isAdmin = false) {
+async function getPortfolioBySlug(db, slug, actor = null) {
   const portfolio = await findPortfolioBySlug(db, slug);
   if (!portfolio) return null;
-  if (!isAdmin && portfolio.status !== 'published') return null;
-  return portfolio;
+  // Tampil jika published, atau pemanggil admin, atau pemilik karya
+  const isAdmin = Boolean(actor && actor.role === 'admin');
+  const isOwner = Boolean(actor && actor.role === 'student' && portfolio.owner_id === actor.id);
+  if (portfolio.status === 'published' || isAdmin || isOwner) return portfolio;
+  return null;
 }
 
 /**
  * Mengambil detail portofolio berdasarkan ID (untuk admin edit).
  */
-async function getPortfolioById(db, id) {
-  return findPortfolioById(db, id);
+async function getPortfolioById(db, id, actor = null) {
+  const portfolio = await findPortfolioById(db, id);
+  if (!portfolio) return { data: null, notFound: true, forbidden: false };
+  // Admin atau pemilik; selain itu 403
+  const isAdmin = Boolean(actor && actor.role === 'admin');
+  const isOwner = Boolean(actor && actor.role === 'student' && portfolio.owner_id === actor.id);
+  if (isAdmin || isOwner) return { data: portfolio, notFound: false, forbidden: false };
+  return { data: null, notFound: false, forbidden: true };
 }
 
 /**
@@ -94,7 +124,7 @@ async function getRelatedPortfolios(db, params) {
 /**
  * Membuat portofolio baru.
  */
-async function createPortfolio(db, payload) {
+async function createPortfolio(db, payload, actor = null) {
   const errors = [];
 
   // Validasi category_id ada di DB
@@ -108,6 +138,21 @@ async function createPortfolio(db, payload) {
   const urlError2 = validateUrl(payload.repo_url, 'repo_url');
   if (urlError1) errors.push(urlError1);
   if (urlError2) errors.push(urlError2);
+
+  // Validasi gambar (thumbnail & screenshots) — menerima data URL base64
+  if (payload.thumbnail_url && payload.thumbnail_url.trim()) {
+    const imgErr = validateImage(payload.thumbnail_url, 'thumbnail_url');
+    if (imgErr) errors.push(imgErr);
+  }
+  if (Array.isArray(payload.screenshots)) {
+    if (payload.screenshots.length > 6) {
+      errors.push({ field: 'screenshots', message: 'Maksimal 6 screenshot.' });
+    }
+    payload.screenshots.forEach((s, i) => {
+      const imgErr = validateImage(s, `screenshots[${i}]`);
+      if (imgErr) errors.push(imgErr);
+    });
+  }
 
   if (errors.length > 0) return { data: null, errors };
 
@@ -130,10 +175,46 @@ async function createPortfolio(db, payload) {
       ? payload.thumbnail_url.trim()
       : `https://picsum.photos/seed/${slug}/600/400`;
 
+  const cleanScreenshots = Array.isArray(payload.screenshots)
+    ? payload.screenshots
+        .map((s) => (typeof s === 'string' ? s.trim() : s))
+        .filter((s) => s && String(s).length > 0)
+    : [];
   const screenshots =
-    Array.isArray(payload.screenshots) && payload.screenshots.length > 0
-      ? payload.screenshots
+    cleanScreenshots.length > 0
+      ? cleanScreenshots
       : [`https://picsum.photos/seed/${slug}-1/800/500`];
+
+  // Kepemilikan & default per role
+  const isStudent = Boolean(actor && actor.role === 'student');
+  const isAdmin = Boolean(actor && actor.role === 'admin');
+
+  let ownerId = null;
+  let status = payload.status;
+  let isFeatured = payload.is_featured;
+
+  if (isStudent) {
+    ownerId = Number(actor.id); // murid: owner_id = id sendiri
+    isFeatured = false; // dipaksa false
+    if (!status) status = 'published'; // default published
+  } else if (isAdmin) {
+    // admin: owner_id dari body jika ada (harus id murid valid), selain itu NULL
+    if (payload.owner_id !== undefined && payload.owner_id !== null && payload.owner_id !== '') {
+      const oid = Number(payload.owner_id);
+      const [[uRow]] = await db.query(
+        "SELECT id FROM users WHERE id = ? AND role = 'student' LIMIT 1",
+        [oid]
+      );
+      if (!uRow) {
+        errors.push({ field: 'owner_id', message: 'owner_id harus id murid yang valid.' });
+      } else {
+        ownerId = oid;
+      }
+    }
+    if (!status) status = 'draft'; // default draft
+  }
+
+  if (errors.length > 0) return { data: null, errors };
 
   const data = {
     title: payload.title.trim(),
@@ -150,8 +231,9 @@ async function createPortfolio(db, payload) {
     thumbnail_url,
     screenshots: safeJsonStringify(screenshots),
     year: payload.year ? Number(payload.year) : new Date().getFullYear(),
-    status: payload.status || 'draft',
-    is_featured: Boolean(payload.is_featured),
+    status,
+    is_featured: Boolean(isFeatured),
+    owner_id: ownerId,
   };
 
   const insertId = await insertPortfolio(db, data);
@@ -162,9 +244,17 @@ async function createPortfolio(db, payload) {
 /**
  * Memperbarui portofolio yang ada (partial update).
  */
-async function updatePortfolio(db, id, payload) {
+async function updatePortfolio(db, id, payload, actor = null) {
   const existing = await findPortfolioById(db, id);
-  if (!existing) return { data: null, notFound: true, errors: [] };
+  if (!existing) return { data: null, notFound: true, errors: [], forbidden: false };
+
+  const isStudent = Boolean(actor && actor.role === 'student');
+  const isAdmin = Boolean(actor && actor.role === 'admin');
+
+  // Murid hanya boleh mengubah karya miliknya sendiri
+  if (isStudent && existing.owner_id !== actor.id) {
+    return { data: null, notFound: false, errors: [], forbidden: true };
+  }
 
   const errors = [];
 
@@ -182,6 +272,42 @@ async function updatePortfolio(db, id, payload) {
   if (payload.repo_url !== undefined) {
     const err = validateUrl(payload.repo_url, 'repo_url');
     if (err) errors.push(err);
+  }
+
+  // Validasi gambar jika dikirim (menerima data URL base64)
+  if (payload.thumbnail_url !== undefined) {
+    const imgErr = validateImage(payload.thumbnail_url, 'thumbnail_url');
+    if (imgErr) errors.push(imgErr);
+  }
+  if (payload.screenshots !== undefined && Array.isArray(payload.screenshots)) {
+    if (payload.screenshots.length > 6) {
+      errors.push({ field: 'screenshots', message: 'Maksimal 6 screenshot.' });
+    }
+    payload.screenshots.forEach((s, i) => {
+      const imgErr = validateImage(s, `screenshots[${i}]`);
+      if (imgErr) errors.push(imgErr);
+    });
+  }
+
+  if (errors.length > 0) return { data: null, notFound: false, errors };
+
+  // owner_id hanya bisa diubah admin (murid diabaikan)
+  let ownerIdUpdate = undefined;
+  if (isAdmin && payload.owner_id !== undefined) {
+    if (payload.owner_id === null || payload.owner_id === '') {
+      ownerIdUpdate = null;
+    } else {
+      const oid = Number(payload.owner_id);
+      const [[uRow]] = await db.query(
+        "SELECT id FROM users WHERE id = ? AND role = 'student' LIMIT 1",
+        [oid]
+      );
+      if (!uRow) {
+        errors.push({ field: 'owner_id', message: 'owner_id harus id murid yang valid.' });
+      } else {
+        ownerIdUpdate = oid;
+      }
+    }
   }
 
   if (errors.length > 0) return { data: null, notFound: false, errors };
@@ -213,24 +339,40 @@ async function updatePortfolio(db, id, payload) {
   if (payload.project_url !== undefined) updateData.project_url = payload.project_url.trim();
   if (payload.repo_url !== undefined) updateData.repo_url = payload.repo_url.trim();
   if (payload.thumbnail_url !== undefined) updateData.thumbnail_url = payload.thumbnail_url.trim();
-  if (payload.screenshots !== undefined) updateData.screenshots = safeJsonStringify(payload.screenshots);
+  if (payload.screenshots !== undefined) {
+    const cleaned = Array.isArray(payload.screenshots)
+      ? payload.screenshots
+          .map((s) => (typeof s === 'string' ? s.trim() : s))
+          .filter((s) => s && String(s).length > 0)
+      : [];
+    updateData.screenshots = safeJsonStringify(cleaned);
+  }
   if (payload.year !== undefined) updateData.year = Number(payload.year);
   if (payload.status !== undefined) updateData.status = payload.status;
-  if (payload.is_featured !== undefined) updateData.is_featured = payload.is_featured ? 1 : 0;
+  // is_featured hanya bisa diubah admin (murid diabaikan)
+  if (isAdmin && payload.is_featured !== undefined) updateData.is_featured = payload.is_featured ? 1 : 0;
+  // owner_id: hasil validasi admin di atas
+  if (ownerIdUpdate !== undefined) updateData.owner_id = ownerIdUpdate;
 
   await updatePortfolioById(db, id, updateData);
   const updated = await findPortfolioById(db, id);
-  return { data: updated, notFound: false, errors: [] };
+  return { data: updated, notFound: false, errors: [], forbidden: false };
 }
 
 /**
  * Menghapus portofolio.
  */
-async function deletePortfolio(db, id) {
+async function deletePortfolio(db, id, actor = null) {
   const portfolio = await findPortfolioById(db, id);
-  if (!portfolio) return { deleted: null, notFound: true };
+  if (!portfolio) return { deleted: null, notFound: true, forbidden: false };
+  const isAdmin = Boolean(actor && actor.role === 'admin');
+  const isStudent = Boolean(actor && actor.role === 'student');
+  // Murid hanya boleh menghapus karya miliknya sendiri
+  if (isStudent && portfolio.owner_id !== actor.id) {
+    return { deleted: null, notFound: false, forbidden: true };
+  }
   await deletePortfolioById(db, id);
-  return { deleted: portfolio, notFound: false };
+  return { deleted: portfolio, notFound: false, forbidden: false };
 }
 
 module.exports = {

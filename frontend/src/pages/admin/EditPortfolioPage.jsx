@@ -34,16 +34,12 @@ export function EditPortfolioPage() {
         if (catRes.success) setCategories(catRes.data || []);
 
         if (portRes.success && portRes.data) {
-          const p = portRes.data;
-          // Murid tidak boleh edit karya orang lain
-          if (isStudent && p.owner_id !== user?.id) {
-            toast.error('Anda hanya dapat mengedit karya milik sendiri.');
-            navigate('/admin/portofolio', { replace: true });
-            return;
-          }
-          setPortfolio(p);
+          setPortfolio(portRes.data);
         } else {
-          setError(portRes.message || 'Portofolio tidak ditemukan');
+          // 403 (bukan pemilik) atau 404 (tidak ditemukan) -> toast + redirect
+          toast.error(portRes.message || 'Portofolio tidak ditemukan');
+          navigate('/admin/portofolio', { replace: true });
+          return;
         }
       } catch (err) {
         setError(err.message || 'Terjadi kesalahan sistem');
@@ -57,7 +53,7 @@ export function EditPortfolioPage() {
   const handleSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      const res = await portfolioService.updatePortfolio(id, formData, user);
+      const res = await portfolioService.updatePortfolio(id, formData);
       if (res.success) {
         toast.success(res.message || 'Portofolio berhasil diperbarui!');
         navigate('/admin/portofolio');

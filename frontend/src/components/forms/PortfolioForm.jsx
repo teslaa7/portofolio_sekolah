@@ -23,6 +23,8 @@ import {
   IMAGE_ACCEPT,
 } from '../../utils/imageFile.js';
 
+const MAX_SCREENSHOTS = 6;
+
 export function PortfolioForm({
   initialData = {},
   categories = [],
@@ -102,27 +104,29 @@ export function PortfolioForm({
     // Reset input agar file yang sama bisa dipilih ulang
     e.target.value = '';
 
+    // Batasi maksimal 6 screenshot total
+    const available = MAX_SCREENSHOTS - formData.screenshots.length;
+    if (available <= 0) {
+      setImageErrors((prev) => ({ ...prev, screenshot: `Maksimal ${MAX_SCREENSHOTS} screenshot.` }));
+      return;
+    }
+    const filesToProcess = files.slice(0, available);
+
     const newUrls = [];
     let firstError = null;
 
-    for (const file of files) {
+    for (const file of filesToProcess) {
       const { valid, error } = validateImageFile(file);
       if (!valid) {
         firstError = error;
         continue;
       }
       try {
-        const dataUrl = await fileToOptimizedDataUrl(file);
+        const dataUrl = await fileToOptimizedDataUrl(file, 1280);
         newUrls.push(dataUrl);
-      } catch {
-        firstError = 'Gagal membaca file gambar. Coba file lain.';
+      } catch (err) {
+        firstError = err.message || 'Gagal memproses gambar. Coba file lain.';
       }
-    }
-
-    if (firstError) {
-      setImageErrors((prev) => ({ ...prev, screenshot: firstError }));
-    } else {
-      setImageErrors((prev) => ({ ...prev, screenshot: null }));
     }
 
     if (newUrls.length > 0) {
@@ -130,6 +134,14 @@ export function PortfolioForm({
         ...prev,
         screenshots: [...prev.screenshots, ...newUrls],
       }));
+    }
+
+    if (firstError) {
+      setImageErrors((prev) => ({ ...prev, screenshot: firstError }));
+    } else if (files.length > available) {
+      setImageErrors((prev) => ({ ...prev, screenshot: `Maksimal ${MAX_SCREENSHOTS} screenshot.` }));
+    } else {
+      setImageErrors((prev) => ({ ...prev, screenshot: null }));
     }
   };
 
@@ -154,14 +166,14 @@ export function PortfolioForm({
     }
 
     try {
-      const dataUrl = await fileToOptimizedDataUrl(file);
+      const dataUrl = await fileToOptimizedDataUrl(file, 800);
       setFormData((prev) => ({ ...prev, thumbnail_url: dataUrl }));
       setImageErrors((prev) => ({ ...prev, thumbnail: null }));
       if (errors.thumbnail_url) {
         setErrors((prev) => ({ ...prev, thumbnail_url: null }));
       }
-    } catch {
-      setImageErrors((prev) => ({ ...prev, thumbnail: 'Gagal membaca file gambar. Coba file lain.' }));
+    } catch (err) {
+      setImageErrors((prev) => ({ ...prev, thumbnail: err.message || 'Gagal memproses gambar. Coba file lain.' }));
     }
   };
 

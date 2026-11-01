@@ -4,20 +4,23 @@ import { authService } from '../services/authService.js';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // Login dummy disimpan di state/context (tanpa localStorage sesuai permintaan)
+  // User diambil dari /auth/me bila ada token di localStorage (persistensi sesi).
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Inisialisasi cek sesi saat awal render
+    // Inisialisasi: cek sesi via token yang tersimpan saat aplikasi dimuat
     const initAuth = async () => {
       try {
         const res = await authService.getCurrentUser();
         if (res.success && res.data) {
           setUser(res.data);
+        } else {
+          setUser(null);
         }
       } catch (err) {
         console.error('Error checking auth:', err);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }

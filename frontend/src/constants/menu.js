@@ -8,4 +8,5 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Dashboard', path: '/admin', icon: 'LayoutDashboard' },
   { label: 'Portofolio', path: '/admin/portofolio', icon: 'FolderGit2' },
   { label: 'Kategori', path: '/admin/kategori', icon: 'Tags' },
+  { label: 'Murid', path: '/admin/murid', icon: 'Users' },
 ];

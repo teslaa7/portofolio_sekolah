@@ -12,11 +12,15 @@ CREATE TABLE IF NOT EXISTS users (
   name        VARCHAR(150) NOT NULL,
   email       VARCHAR(150) NOT NULL,
   password    VARCHAR(255) NOT NULL COMMENT 'hash bcrypt, bukan teks asli',
-  role        ENUM('admin') NOT NULL DEFAULT 'admin',
+  role        ENUM('admin','student') NOT NULL DEFAULT 'student',
   avatar      VARCHAR(500) NULL,
+  class_name  VARCHAR(50)  NOT NULL DEFAULT '',
+  major       VARCHAR(100) NOT NULL DEFAULT '',
+  is_active   TINYINT(1)   NOT NULL DEFAULT 1,
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_users_email (email)
+  UNIQUE KEY uq_users_email (email),
+  KEY idx_users_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -44,11 +48,12 @@ CREATE TABLE IF NOT EXISTS portfolios (
   tech_stack         TEXT NULL COMMENT 'JSON array string',
   project_url        VARCHAR(500) NOT NULL DEFAULT '',
   repo_url           VARCHAR(500) NOT NULL DEFAULT '',
-  thumbnail_url      VARCHAR(500) NOT NULL DEFAULT '',
-  screenshots        TEXT NULL COMMENT 'JSON array string',
+  thumbnail_url      MEDIUMTEXT NULL COMMENT 'data URL base64 (frontend) atau URL gambar',
+  screenshots        MEDIUMTEXT NULL COMMENT 'JSON array string (data URL base64 atau URL)',
   year               SMALLINT UNSIGNED NOT NULL,
   status             ENUM('draft','published') NOT NULL DEFAULT 'draft',
   is_featured        TINYINT(1) NOT NULL DEFAULT 0,
+  owner_id           BIGINT UNSIGNED NULL COMMENT 'pemilik karya; NULL = karya sekolah/guru',
   created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_portfolios_slug (slug),
@@ -57,6 +62,26 @@ CREATE TABLE IF NOT EXISTS portfolios (
   KEY idx_portfolios_major (major),
   KEY idx_portfolios_year (year),
   KEY idx_portfolios_featured (is_featured),
+  KEY idx_portfolios_owner (owner_id),
   CONSTRAINT fk_portfolios_category FOREIGN KEY (category_id) REFERENCES categories(id)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_portfolios_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+    ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Reviews ──────────────────────────────────────────────────────────────────
+-- Komentar & rating tamu untuk tiap portofolio. Jika portofolio dihapus,
+-- seluruh review terkait ikut terhapus (ON DELETE CASCADE).
+CREATE TABLE IF NOT EXISTS reviews (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  portfolio_id BIGINT UNSIGNED NOT NULL,
+  name         VARCHAR(150) NOT NULL,
+  rating       TINYINT UNSIGNED NOT NULL,
+  comment      VARCHAR(500) NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_reviews_portfolio_name (portfolio_id, name),
+  KEY idx_reviews_portfolio (portfolio_id),
+  CONSTRAINT fk_reviews_portfolio FOREIGN KEY (portfolio_id) REFERENCES portfolios(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -4,13 +4,24 @@ const Fastify = require('fastify');
 const env = require('./config/env');
 
 async function buildApp() {
+  // Logger: pino-pretty opsional di development. Jika paket tidak tersedia,
+  // jalankan logger biasa tanpa transport (mis. di environment minimal).
+  const loggerOpts = { level: env.isProd ? 'warn' : 'info' };
+  if (!env.isProd) {
+    try {
+      require.resolve('pino-pretty');
+      loggerOpts.transport = {
+        target: 'pino-pretty',
+        options: { colorize: true, translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
+      };
+    } catch {
+      // pino-pretty tidak terpasang -> pakai logger default
+    }
+  }
+
   const app = Fastify({
-    logger: {
-      level: env.isProd ? 'warn' : 'info',
-      transport: env.isProd
-        ? undefined
-        : { target: 'pino-pretty', options: { colorize: true, translateTime: 'HH:MM:ss', ignore: 'pid,hostname' } },
-    },
+    logger: loggerOpts,
+    bodyLimit: 10 * 1024 * 1024, // 10 MB (mendukung gambar base64)
   });
 
   // Simpan referensi untuk graceful shutdown
@@ -38,7 +49,9 @@ async function buildApp() {
   await app.register(require('./modules/auth/auth.routes'), { prefix: '/api/auth' });
   await app.register(require('./modules/portfolios/portfolios.routes'), { prefix: '/api' });
   await app.register(require('./modules/categories/categories.routes'), { prefix: '/api' });
+  await app.register(require('./modules/students/students.routes'), { prefix: '/api' });
   await app.register(require('./modules/dashboard/dashboard.routes'), { prefix: '/api' });
+  await app.register(require('./modules/reviews/reviews.routes'), { prefix: '/api' });
 
   // ── Health Check ──────────────────────────────────────────────────────────
   app.get('/api/health', async (req, reply) => {

@@ -10,6 +10,7 @@ import {
   GraduationCap,
   X,
   BookOpen,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
@@ -41,6 +42,7 @@ export function AdminSidebar({ isOpen, onClose }) {
     },
     { label: 'Tambah Portofolio', path: '/admin/portofolio/tambah', icon: PlusCircle, end: true },
     { label: 'Kelola Kategori', path: '/admin/kategori', icon: Tags, end: false },
+    { label: 'Kelola Murid', path: '/admin/murid', icon: Users, end: false },
   ];
 
   const studentLinks = [

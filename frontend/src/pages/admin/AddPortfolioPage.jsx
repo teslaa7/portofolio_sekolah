@@ -34,7 +34,7 @@ export function AddPortfolioPage() {
   const handleSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      const res = await portfolioService.createPortfolio(formData, user);
+      const res = await portfolioService.createPortfolio(formData);
       if (res.success) {
         toast.success(res.message || 'Portofolio berhasil ditambahkan!');
         navigate('/admin/portofolio');

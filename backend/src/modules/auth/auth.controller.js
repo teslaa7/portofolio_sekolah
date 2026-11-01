@@ -6,9 +6,9 @@ const { successResponse, errorResponse } = require('../../utils/response');
 async function loginHandler(req, reply) {
   const { email, password } = req.body;
 
-  const { user, error } = await verifyLogin(req.server.db, email, password);
+  const { user, error, statusCode } = await verifyLogin(req.server.db, email, password);
   if (error) {
-    return errorResponse(reply, { message: error, statusCode: 401 });
+    return errorResponse(reply, { message: error, statusCode: statusCode || 401 });
   }
 
   const token = req.server.jwt.sign({ id: user.id, role: user.role });
@@ -22,7 +22,7 @@ async function loginHandler(req, reply) {
 async function getMeHandler(req, reply) {
   const user = await getMe(req.server.db, req.user.id);
   if (!user) {
-    return errorResponse(reply, { message: 'User tidak ditemukan.', statusCode: 404 });
+    return errorResponse(reply, { message: 'Akun tidak ditemukan atau nonaktif.', statusCode: 401 });
   }
   return successResponse(reply, { message: 'Data user berhasil diambil.', data: user });
 }

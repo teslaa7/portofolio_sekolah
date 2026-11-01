@@ -12,36 +12,40 @@ const {
 const { successResponse, errorResponse } = require('../../utils/response');
 
 /**
- * Cek apakah request dari admin yang terautentikasi.
+ * Ambil aktor dari JWT opsional (token valid). null = tamu.
+ * @returns {{ id: number, role: string } | null}
  */
-function isAdminRequest(req) {
+function getActor(req) {
   try {
-    return req.user && req.user.role === 'admin';
+    if (req.user && req.user.id !== undefined && req.user.role) {
+      return { id: Number(req.user.id), role: req.user.role };
+    }
   } catch {
-    return false;
+    // ignore
   }
+  return null;
+}
+
+function isAdmin(actor) {
+  return Boolean(actor && actor.role === 'admin');
 }
 
 // GET /api/portfolios
 async function listHandler(req, reply) {
-  const isAdmin = isAdminRequest(req);
+  const actor = getActor(req);
   const {
-    page = 1, limit = 9, search = '', major = '',
-    category_id = '', year = '', status = '',
-    is_featured = '', sortBy = 'latest',
+    page = 1, limit = 9, search = '', major = '', category_id = '',
+    year = '', status = '', is_featured = '', sortBy = 'latest',
+    mine = '', owner_id = '',
   } = req.query;
 
   const { data, meta } = await listPortfolios(
     req.server.db,
-    { page, limit, search, major, category_id, year, status, is_featured, sortBy },
-    isAdmin
+    { page, limit, search, major, category_id, year, status, is_featured, sortBy, mine, owner_id },
+    actor
   );
 
-  return successResponse(reply, {
-    message: 'Data portofolio berhasil diambil.',
-    data,
-    meta,
-  });
+  return successResponse(reply, { message: 'Data portofolio berhasil diambil.', data, meta });
 }
 
 // GET /api/portfolios/related
@@ -65,8 +69,8 @@ async function relatedHandler(req, reply) {
 
 // GET /api/portfolios/:slug
 async function detailBySlugHandler(req, reply) {
-  const isAdmin = isAdminRequest(req);
-  const portfolio = await getPortfolioBySlug(req.server.db, req.params.slug, isAdmin);
+  const actor = getActor(req);
+  const portfolio = await getPortfolioBySlug(req.server.db, req.params.slug, actor);
 
   if (!portfolio) {
     return errorResponse(reply, { message: 'Portofolio tidak ditemukan.', statusCode: 404 });
@@ -76,30 +80,36 @@ async function detailBySlugHandler(req, reply) {
 
 // GET /api/admin/portfolios/:id
 async function detailByIdHandler(req, reply) {
-  const portfolio = await getPortfolioById(req.server.db, req.params.id);
-  if (!portfolio) {
+  const actor = getActor(req);
+  const result = await getPortfolioById(req.server.db, req.params.id, actor);
+
+  if (result.notFound) {
     return errorResponse(reply, { message: 'Portofolio tidak ditemukan.', statusCode: 404 });
   }
-  return successResponse(reply, { message: 'Detail portofolio berhasil diambil.', data: portfolio });
+  if (result.forbidden) {
+    return errorResponse(reply, { message: 'Anda hanya dapat mengakses karya milik sendiri.', statusCode: 403 });
+  }
+  return successResponse(reply, { message: 'Detail portofolio berhasil diambil.', data: result.data });
 }
 
 // POST /api/portfolios
 async function createHandler(req, reply) {
-  const { data, errors } = await createPortfolio(req.server.db, req.body);
+  const actor = getActor(req);
+  const { data, errors } = await createPortfolio(req.server.db, req.body, actor);
   if (errors && errors.length > 0) {
     return errorResponse(reply, { message: 'Data yang dikirim tidak valid.', errors, statusCode: 400 });
   }
-  return successResponse(reply, {
-    message: 'Portofolio baru berhasil ditambahkan.',
-    data,
-    statusCode: 201,
-  });
+  return successResponse(reply, { message: 'Portofolio baru berhasil ditambahkan.', data, statusCode: 201 });
 }
 
 // PUT /api/portfolios/:id
 async function updateHandler(req, reply) {
-  const { data, notFound, errors } = await updatePortfolio(req.server.db, req.params.id, req.body);
+  const actor = getActor(req);
+  const { data, notFound, forbidden, errors } = await updatePortfolio(req.server.db, req.params.id, req.body, actor);
 
+  if (forbidden) {
+    return errorResponse(reply, { message: 'Anda hanya dapat mengubah karya milik sendiri.', statusCode: 403 });
+  }
   if (notFound) {
     return errorResponse(reply, { message: 'Portofolio tidak ditemukan.', statusCode: 404 });
   }
@@ -111,8 +121,12 @@ async function updateHandler(req, reply) {
 
 // DELETE /api/portfolios/:id
 async function deleteHandler(req, reply) {
-  const { deleted, notFound } = await deletePortfolio(req.server.db, req.params.id);
+  const actor = getActor(req);
+  const { deleted, notFound, forbidden } = await deletePortfolio(req.server.db, req.params.id, actor);
 
+  if (forbidden) {
+    return errorResponse(reply, { message: 'Anda hanya dapat menghapus karya milik sendiri.', statusCode: 403 });
+  }
   if (notFound) {
     return errorResponse(reply, { message: 'Portofolio tidak ditemukan.', statusCode: 404 });
   }

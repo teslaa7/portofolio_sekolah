@@ -43,7 +43,6 @@ export function ReviewForm({ onSubmit, currentUser = null }) {
         name: isLoggedIn ? currentUser.name : name.trim(),
         rating,
         comment: comment.trim(),
-        user_id: currentUser?.id ?? null,
       });
       // Reset form setelah sukses
       setComment('');

@@ -16,8 +16,6 @@ module.exports = fp(async function (app) {
     queueLimit: 0,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
-    // Tangani koneksi putus
-    enableKeepAlive: true,
   });
 
   // Verifikasi koneksi saat startup
