@@ -1,11 +1,11 @@
 'use strict';
 
 const requireAuth = require('../../middlewares/requireAuth');
-const { loginHandler, getMeHandler, logoutHandler } = require('./auth.controller');
-const { loginBody } = require('./auth.schema');
+const { loginHandler, getMeHandler, logoutHandler, registerHandler } = require('./auth.controller');
+const { loginBody, registerBody } = require('./auth.schema');
 
 module.exports = async function authRoutes(app) {
-  // POST /api/auth/login — rate limit ketat via config per-route
+  // POST /api/auth/login
   app.post('/login', {
     schema: { body: loginBody },
     config: {
@@ -21,13 +21,25 @@ module.exports = async function authRoutes(app) {
     },
   }, loginHandler);
 
+  // POST /api/auth/register  (publik, rate limit ketat)
+  app.post('/register', {
+    schema: { body: registerBody },
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '10 minutes',
+        keyGenerator: (req) => req.ip,
+        errorResponseBuilder: (_req, ctx) => ({
+          success: false,
+          message: `Terlalu banyak percobaan pendaftaran. Coba lagi dalam ${Math.ceil(ctx.ttl / 1000)} detik.`,
+        }),
+      },
+    },
+  }, registerHandler);
+
   // GET /api/auth/me  (butuh token)
-  app.get('/me', {
-    preHandler: requireAuth,
-  }, getMeHandler);
+  app.get('/me', { preHandler: requireAuth }, getMeHandler);
 
   // POST /api/auth/logout  (butuh token)
-  app.post('/logout', {
-    preHandler: requireAuth,
-  }, logoutHandler);
+  app.post('/logout', { preHandler: requireAuth }, logoutHandler);
 };

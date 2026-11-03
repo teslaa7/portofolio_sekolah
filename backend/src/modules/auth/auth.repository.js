@@ -2,8 +2,6 @@
 
 /**
  * Mengambil user berdasarkan email (case-insensitive), termasuk profil murid.
- * @param {import('mysql2/promise').Pool} db
- * @param {string} email
  */
 async function findUserByEmail(db, email) {
   const [rows] = await db.query(
@@ -15,8 +13,6 @@ async function findUserByEmail(db, email) {
 
 /**
  * Mengambil user berdasarkan ID (tanpa password).
- * @param {import('mysql2/promise').Pool} db
- * @param {number} id
  */
 async function findUserById(db, id) {
   const [rows] = await db.query(
@@ -26,4 +22,28 @@ async function findUserById(db, id) {
   return rows[0] || null;
 }
 
-module.exports = { findUserByEmail, findUserById };
+/**
+ * Menyisipkan user baru dengan role = 'student' dan is_active = 1.
+ * role dan is_active di-hardcode di server; tidak diterima dari input client.
+ * @param {import('mysql2/promise').Pool} db
+ * @param {{ name: string, email: string, passwordHash: string, class_name: string, major: string }} data
+ * @returns {number} insertId
+ */
+async function createStudent(db, { name, email, passwordHash, class_name, major }) {
+  try {
+    const [result] = await db.query(
+      `INSERT INTO users (name, email, password, role, is_active, class_name, major)
+       VALUES (?, ?, ?, 'student', 1, ?, ?)`,
+      [name, email, passwordHash, class_name, major]
+    );
+    return result.insertId;
+  } catch (err) {
+    // Tangani race condition: email sudah didaftarkan sesaat sebelum INSERT ini
+    if (err.code === 'ER_DUP_ENTRY') {
+      throw Object.assign(new Error('Email sudah terdaftar.'), { isDuplicate: true });
+    }
+    throw err;
+  }
+}
+
+module.exports = { findUserByEmail, findUserById, createStudent };

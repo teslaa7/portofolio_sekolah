@@ -82,8 +82,8 @@ export function DashboardPage() {
         </Link>
       </div>
 
-      {/* 6 Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 sm:gap-6">
+      {/* 7 Summary Stat Cards — 4 kolom max agar kartu punya ruang cukup */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Karya"
           value={summary.total}
@@ -134,28 +134,28 @@ export function DashboardPage() {
         />
         <StatCard
           title="Total Murid"
-          value={summary.studentsCount}
+          value={summary.studentsCount ?? 0}
           icon={Users}
-          badgeColor="blue"
+          badgeColor="emerald"
           badgeText="Terdaftar"
-          description="Akun siswa terdaftar"
+          description="Akun siswa aktif"
         />
       </div>
 
       {/* Chart Section */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="min-w-0">
             <h3 className="text-lg font-bold text-[#0F172A] font-heading flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#0B2E6B]" />
+              <BarChart3 className="w-5 h-5 text-[#0B2E6B] shrink-0" />
               <span>Distribusi Karya per Jurusan Kejuruan</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Grafik perbandingan jumlah proyek yang telah diselesaikan oleh setiap kompetensi keahlian.
             </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 self-start sm:self-auto">
-            {summary.categoriesCount} Kategori Terdaftar
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap self-start shrink-0">
+            {summary.categoriesCount} Kategori
           </span>
         </div>
 
@@ -163,11 +163,12 @@ export function DashboardPage() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={majorChartData}
-              margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+              margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
               <XAxis
                 dataKey="name"
+                interval={0}
                 tick={{ fill: '#475569', fontSize: 12, fontWeight: 600 }}
                 tickLine={false}
                 axisLine={{ stroke: '#CBD5E1' }}

@@ -45,6 +45,22 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const register = async (payload) => {
+    setIsLoading(true);
+    try {
+      const res = await authService.register(payload);
+      if (res.success && res.data?.user) {
+        setUser(res.data.user);
+        return { success: true, user: res.data.user, message: res.message };
+      }
+      return { success: false, message: res.message };
+    } catch (err) {
+      return { success: false, message: err.message || 'Terjadi kesalahan sistem' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -63,6 +79,7 @@ export function AuthProvider({ children }) {
     isStudent: user?.role === 'student',
     isLoading,
     login,
+    register,
     logout,
   };
 

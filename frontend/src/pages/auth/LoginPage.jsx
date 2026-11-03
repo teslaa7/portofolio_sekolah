@@ -221,6 +221,17 @@ export function LoginPage() {
         <p className="mt-6 text-center text-xs text-slate-400">
           Sistem Galeri Portofolio Sekolah • Akses Guru & Murid
         </p>
+
+        {/* Tautan ke halaman daftar */}
+        <p className="mt-3 text-center text-sm text-slate-500">
+          Belum punya akun?{' '}
+          <Link
+            to="/daftar"
+            className="font-semibold text-[#0B2E6B] hover:text-[#1E40AF] transition-colors"
+          >
+            Daftar sebagai murid
+          </Link>
+        </p>
       </div>
     </div>
   );

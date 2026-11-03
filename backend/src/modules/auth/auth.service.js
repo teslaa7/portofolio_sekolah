@@ -1,16 +1,10 @@
 'use strict';
 
 const bcrypt = require('bcryptjs');
-const { findUserByEmail, findUserById } = require('./auth.repository');
+const { findUserByEmail, findUserById, createStudent } = require('./auth.repository');
 
-// Hash bcrypt valid yang dibuat sekali saat modul dimuat. Dipakai untuk
-// compare dummy saat email tidak ditemukan agar waktu respons konsisten
-// (mencegah timing attack).
 const DUMMY_HASH = bcrypt.hashSync('dummy-password', 10);
 
-/**
- * Membangun objek user aman (tanpa password & is_active) untuk dikembalikan ke client.
- */
 function toSafeUser(user) {
   const { password: _pw, is_active: _ia, ...rest } = user;
   return {
@@ -24,18 +18,11 @@ function toSafeUser(user) {
   };
 }
 
-/**
- * Memverifikasi kredensial login.
- * Selalu mengembalikan pesan error yang sama untuk email salah maupun password salah.
- * Cek is_active dilakukan SETELAH password benar agar tidak membocorkan keberadaan akun.
- * @returns {{ user: object|null, error: string|null, statusCode: number }}
- */
 async function verifyLogin(db, email, password) {
   const GENERIC_ERROR = 'Email atau password salah. Silakan periksa kembali kredensial Anda.';
 
   const user = await findUserByEmail(db, email);
   if (!user) {
-    // Tetap lakukan bcrypt compare dummy agar waktu respons konsisten
     await bcrypt.compare(password, DUMMY_HASH);
     return { user: null, error: GENERIC_ERROR, statusCode: 401 };
   }
@@ -45,7 +32,6 @@ async function verifyLogin(db, email, password) {
     return { user: null, error: GENERIC_ERROR, statusCode: 401 };
   }
 
-  // Password benar -> baru cek status akun
   if (!user.is_active || Number(user.is_active) === 0) {
     return { user: null, error: 'Akun Anda dinonaktifkan. Hubungi guru/admin.', statusCode: 403 };
   }
@@ -53,12 +39,6 @@ async function verifyLogin(db, email, password) {
   return { user: toSafeUser(user), error: null, statusCode: 200 };
 }
 
-/**
- * Mengambil data user yang sedang login berdasarkan ID dari token.
- * Membalas null jika user tidak ada ATAU nonaktif (sehingga /me -> 401).
- * @param {import('mysql2/promise').Pool} db
- * @param {number} id
- */
 async function getMe(db, id) {
   const user = await findUserById(db, id);
   if (!user || !user.is_active || Number(user.is_active) === 0) return null;
@@ -73,4 +53,59 @@ async function getMe(db, id) {
   };
 }
 
-module.exports = { verifyLogin, getMe };
+/**
+ * Mendaftarkan murid baru.
+ * - Normalisasi email (trim + lowercase).
+ * - Tolak jika email sudah terdaftar (409).
+ * - Hash password dengan bcrypt cost 10.
+ * - role 'student' dan is_active = 1 di-hardcode di repository; tidak bisa
+ *   dimanipulasi lewat payload.
+ * @returns {{ user: object|null, error: string|null, statusCode: number }}
+ */
+async function registerStudent(db, payload) {
+  const email = payload.email.trim().toLowerCase();
+  const name  = payload.name.trim();
+  const class_name = payload.class_name.trim();
+  const major  = payload.major.trim();
+
+  // Cek email sudah ada
+  const existing = await findUserByEmail(db, email);
+  if (existing) {
+    return {
+      user: null,
+      error: 'Email sudah terdaftar. Silakan masuk atau gunakan email lain.',
+      statusCode: 409,
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(payload.password, 10);
+
+  let insertId;
+  try {
+    insertId = await createStudent(db, { name, email, passwordHash, class_name, major });
+  } catch (err) {
+    if (err.isDuplicate) {
+      return {
+        user: null,
+        error: 'Email sudah terdaftar. Silakan masuk atau gunakan email lain.',
+        statusCode: 409,
+      };
+    }
+    throw err;
+  }
+
+  // Bangun safe user tanpa query tambahan (data sudah diketahui)
+  const safeUser = {
+    id: Number(insertId),
+    name,
+    email,
+    role: 'student',
+    avatar: null,
+    class_name,
+    major,
+  };
+
+  return { user: safeUser, error: null, statusCode: 201 };
+}
+
+module.exports = { verifyLogin, getMe, registerStudent };

@@ -72,3 +72,44 @@ export function validatePortfolioForm(formData) {
     errors,
   };
 }
+
+export function validateRegisterForm(formData) {
+  const errors = {};
+
+  if (!formData.name || !formData.name.trim()) {
+    errors.name = 'Nama lengkap wajib diisi';
+  } else if (formData.name.trim().length < 2) {
+    errors.name = 'Nama minimal 2 karakter';
+  }
+
+  if (!formData.email || !formData.email.trim()) {
+    errors.email = 'Email wajib diisi';
+  } else if (!isValidEmail(formData.email)) {
+    errors.email = 'Format email tidak valid';
+  }
+
+  if (!formData.class_name || !formData.class_name.trim()) {
+    errors.class_name = 'Kelas wajib diisi';
+  }
+
+  if (!formData.major) {
+    errors.major = 'Jurusan wajib dipilih';
+  }
+
+  if (!formData.password) {
+    errors.password = 'Password wajib diisi';
+  } else if (formData.password.length < 8) {
+    errors.password = 'Password minimal 8 karakter';
+  }
+
+  if (!formData.confirmPassword) {
+    errors.confirmPassword = 'Konfirmasi password wajib diisi';
+  } else if (formData.password !== formData.confirmPassword) {
+    errors.confirmPassword = 'Konfirmasi password tidak cocok';
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
+}

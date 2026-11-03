@@ -1,6 +1,6 @@
 'use strict';
 
-const { verifyLogin, getMe } = require('./auth.service');
+const { verifyLogin, getMe, registerStudent } = require('./auth.service');
 const { successResponse, errorResponse } = require('../../utils/response');
 
 async function loginHandler(req, reply) {
@@ -28,8 +28,23 @@ async function getMeHandler(req, reply) {
 }
 
 async function logoutHandler(req, reply) {
-  // JWT stateless: cukup balas sukses; client harus menghapus token sendiri
   return successResponse(reply, { message: 'Berhasil keluar dari sistem.', data: null });
 }
 
-module.exports = { loginHandler, getMeHandler, logoutHandler };
+async function registerHandler(req, reply) {
+  const { user, error, statusCode } = await registerStudent(req.server.db, req.body);
+  if (error) {
+    return errorResponse(reply, { message: error, statusCode });
+  }
+
+  // Langsung terbitkan token agar murid baru otomatis masuk
+  const token = req.server.jwt.sign({ id: user.id, role: user.role });
+
+  return successResponse(reply, {
+    message: 'Registrasi berhasil. Selamat datang!',
+    data: { user, token },
+    statusCode: 201,
+  });
+}
+
+module.exports = { loginHandler, getMeHandler, logoutHandler, registerHandler };

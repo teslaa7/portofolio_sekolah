@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { GraduationCap, Menu, X, LogIn, LayoutDashboard } from 'lucide-react';
+import { GraduationCap, Menu, X, LogIn, LayoutDashboard, UserPlus } from 'lucide-react';
 import { PUBLIC_NAV_ITEMS } from '../../constants/menu.js';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { Button } from '../common/Button.jsx';
@@ -54,20 +54,27 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Action Button */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Action Buttons */}
+          <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
-              <Link to="/admin">
+              <Link to={user?.role === 'student' ? '/admin/portofolio' : '/admin'}>
                 <Button variant="outline" size="sm" icon={LayoutDashboard}>
-                  Panel Guru ({user?.name?.split(' ')[0] || 'Admin'})
+                  Panel ({user?.name?.split(' ')[0] || 'Pengguna'})
                 </Button>
               </Link>
             ) : (
-              <Link to="/login">
-                <Button variant="primary" size="sm" icon={LogIn}>
-                  Login Guru
-                </Button>
-              </Link>
+              <>
+                <Link to="/daftar">
+                  <Button variant="outline" size="sm" icon={UserPlus}>
+                    Daftar
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="primary" size="sm" icon={LogIn}>
+                    Masuk
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
 
@@ -108,19 +115,29 @@ export function Navbar() {
             })}
           </div>
 
-          <div className="pt-3 border-t border-slate-100">
+          <div className="pt-3 border-t border-slate-100 space-y-2">
             {isAuthenticated ? (
-              <Link to="/admin" onClick={() => setIsOpen(false)}>
+              <Link
+                to={user?.role === 'student' ? '/admin/portofolio' : '/admin'}
+                onClick={() => setIsOpen(false)}
+              >
                 <Button variant="outline" size="md" className="w-full" icon={LayoutDashboard}>
-                  Buka Panel Guru
+                  Buka Panel
                 </Button>
               </Link>
             ) : (
-              <Link to="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="primary" size="md" className="w-full" icon={LogIn}>
-                  Login Guru
-                </Button>
-              </Link>
+              <>
+                <Link to="/login" onClick={() => setIsOpen(false)}>
+                  <Button variant="primary" size="md" className="w-full" icon={LogIn}>
+                    Masuk
+                  </Button>
+                </Link>
+                <Link to="/daftar" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" size="md" className="w-full" icon={UserPlus}>
+                    Daftar sebagai Murid
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
         </div>

@@ -14,6 +14,7 @@ import { AboutPage } from '../pages/public/AboutPage.jsx';
 
 // Auth Pages
 import { LoginPage } from '../pages/auth/LoginPage.jsx';
+import { RegisterPage } from '../pages/auth/RegisterPage.jsx';
 
 // Admin Pages
 import { DashboardPage } from '../pages/admin/DashboardPage.jsx';
@@ -36,6 +37,7 @@ export function AppRoutes() {
 
       {/* Rute Otentikasi */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/daftar" element={<RegisterPage />} />
 
       {/* Rute hanya Admin */}
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

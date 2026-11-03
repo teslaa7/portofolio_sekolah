@@ -3,10 +3,20 @@ import { apiClient } from './apiClient.js';
 export const authService = {
   /**
    * Login user. Menyimpan token ke localStorage via apiClient bila sukses.
-   * @returns {{success, message, data:{user, token}|null}}
    */
   async login(email, password) {
     const res = await apiClient.post('/auth/login', { email, password });
+    if (res.success && res.data?.token) {
+      apiClient.setToken(res.data.token);
+    }
+    return res;
+  },
+
+  /**
+   * Daftar murid baru. Menyimpan token bila sukses sehingga langsung login.
+   */
+  async register(payload) {
+    const res = await apiClient.post('/auth/register', payload);
     if (res.success && res.data?.token) {
       apiClient.setToken(res.data.token);
     }

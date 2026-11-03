@@ -175,15 +175,15 @@ export function ManageCategoryPage() {
                         #{cat.id}
                       </td>
                       <td className="py-4 px-6 font-semibold text-slate-800">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2E6B] flex items-center justify-center shrink-0">
                             <Tags className="w-4 h-4" />
                           </div>
-                          <span>{cat.name}</span>
+                          <span className="truncate">{cat.name}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-6 text-xs font-mono text-slate-500">
-                        {cat.slug}
+                      <td className="py-4 px-6 text-xs font-mono text-slate-500 max-w-[160px]">
+                        <span className="truncate block">{cat.slug}</span>
                       </td>
                       <td className="py-4 px-6">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#0B2E6B] border border-blue-200">
