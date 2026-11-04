@@ -18,7 +18,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-blue-100/80 leading-relaxed">
-              Wadah etalase resmi karya digital inovatif siswa SMK. Menampilkan proyek nyata berbasis industri dari jurusan RPL, TKJ, Multimedia, dan Akuntansi.
+              Sebagai wadah Untuk Karya-karya Siswa SMK NEGERI 1 GUNUNGPUTRI
             </p>
           </div>
 
@@ -41,11 +41,7 @@ export function Footer() {
                   Tentang Program
                 </Link>
               </li>
-              <li>
-                <Link to="/login" className="hover:text-white transition-colors">
-                  Akses Guru / Admin
-                </Link>
-              </li>
+              
             </ul>
           </div>
 
@@ -54,9 +50,7 @@ export function Footer() {
             <h4 className="font-heading font-semibold text-base text-[#F2B705] mb-4">Jurusan Vokasi</h4>
             <ul className="space-y-2.5 text-sm text-blue-100/80">
               <li>Rekayasa Perangkat Lunak (RPL)</li>
-              <li>Teknik Komputer & Jaringan (TKJ)</li>
-              <li>Desain Komunikasi Visual / Multimedia</li>
-              <li>Akuntansi & Keuangan Lembaga</li>
+              <li>Pengembangan Perangkat Lunak Gim (PPLG)</li>
             </ul>
           </div>
 
@@ -66,15 +60,15 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-blue-100/80">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#F2B705] shrink-0 mt-0.5" />
-                <span>Jl. Pendidikan Vokasi No. 45, Indonesia</span>
+                <span>Jl. Barokah No. 06 Desa Wanaherang Kec. Gunungputri Kab. Bogor, Kec. Gunungputri, Kab. Bogor, Prov. Jawa Barat.</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#F2B705] shrink-0" />
-                <span>(021) 8876-5432</span>
+                <span>(021) 8673310</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#F2B705] shrink-0" />
-                <span>portofolio@sekolah.sch.id</span>
+                <span>smkn1gnp@smkn1gnputri.sch.id</span>
               </li>
             </ul>
           </div>
@@ -84,7 +78,7 @@ export function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-blue-200/70">
           <p>© {new Date().getFullYear()} Portofolio Sekolah. Seluruh hak cipta dilindungi undang-undang.</p>
           <p className="flex items-center gap-1">
-            Dibangun dengan bangga untuk talenta muda Indonesia
+            Dibangun Oleh Ibra Dan Alief
           </p>
         </div>
       </div>

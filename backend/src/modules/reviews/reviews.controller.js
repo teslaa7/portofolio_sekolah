@@ -87,3 +87,30 @@ module.exports = {
   deleteReviewHandler,
   latestReviewsHandler,
 };
+
+// ── Handler tambahan: ulasan milik user & komunitas ──────────────────────────
+const { getMyReviews, getCommunityReviews } = require('./reviews.service');
+
+// GET /api/reviews/mine?page=&limit=
+async function myReviewsHandler(req, reply) {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await getMyReviews(req.server.db, req.user.id, { page, limit });
+  return successResponse(reply, {
+    message: 'Ulasan karya Anda berhasil diambil.',
+    data: result.data,
+    meta: { ...result.meta, summary: result.summary },
+  });
+}
+
+// GET /api/reviews/community?page=&limit=
+async function communityReviewsHandler(req, reply) {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await getCommunityReviews(req.server.db, req.user.id, { page, limit });
+  return successResponse(reply, {
+    message: 'Ulasan komunitas berhasil diambil.',
+    data: result.data,
+    meta: result.meta,
+  });
+}
+
+Object.assign(module.exports, { myReviewsHandler, communityReviewsHandler });

@@ -18,20 +18,13 @@ npm run dev
 
 Aplikasi berjalan di `http://localhost:3000`. Base URL backend diatur via `VITE_API_BASE_URL` (default `http://localhost:3001/api`).
 
-## Akun Demo
-
-| Role  | Email                    | Password   |
-|-------|--------------------------|------------|
-| Admin | admin@sekolah.sch.id     | admin123   |
-| Murid | ahmad@siswa.sch.id       | siswa123   |
-| Murid | siti@siswa.sch.id        | siswa123   |
-| Murid | rani@siswa.sch.id        | siswa123   |
+> **Login admin awal** dibuat dari `database/seed.sql`; segera ganti password melalui menu **Edit Profil** di panel setelah pertama kali masuk.
 
 ## Fitur
 
 - **Publik**: galeri karya, detail portofolio + ulasan, kirim ulasan sebagai tamu.
-- **Murid**: "Karya Saya" — tambah/edit/hapus karya milik sendiri (tanpa opsi featured).
-- **Admin**: kelola semua karya, kategori, akun murid (`/admin/murid`), dan lihat dashboard.
+- **Murid**: "Karya Saya" — tambah/edit/hapus karya milik sendiri; Edit Profil; Komentar & Ulasan.
+- **Admin**: kelola semua karya, kategori, akun murid (`/admin/murid`), dashboard, Edit Profil.
 
 Token disimpan di `localStorage` (`portofolio_token`); sesi dipulihkan via `GET /auth/me` saat aplikasi dimuat.
 

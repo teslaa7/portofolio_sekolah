@@ -16,6 +16,8 @@ export function AdminLayout() {
     if (path.includes('/edit')) return 'Edit Data Portofolio';
     if (path === '/admin/kategori') return 'Kelola Kategori Portofolio';
     if (path === '/admin/murid') return 'Kelola Murid';
+    if (path === '/admin/profil') return 'Edit Profil';
+    if (path === '/admin/ulasan') return 'Komentar & Ulasan';
     return 'Panel';
   };
 

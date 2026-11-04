@@ -27,8 +27,29 @@ const registerBody = {
     password:   { type: 'string', minLength: 8, maxLength: 255 },
     class_name: { type: 'string', minLength: 1, maxLength: 50 },
     major:      { type: 'string', minLength: 1, maxLength: 100, enum: VALID_MAJORS },
-    // role & is_active TIDAK ada di sini — tidak bisa dikirim dari client
   },
 };
 
-module.exports = { loginBody, registerBody };
+// email / role / is_active tidak diterima dari client (additionalProperties: false)
+const updateProfileBody = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    name:       { type: 'string', minLength: 2, maxLength: 150 },
+    avatar:     { type: 'string', maxLength: 500 },
+    class_name: { type: 'string', maxLength: 50 },
+    major:      { type: 'string', maxLength: 100, enum: VALID_MAJORS },
+  },
+};
+
+const changePasswordBody = {
+  type: 'object',
+  required: ['current_password', 'new_password'],
+  additionalProperties: false,
+  properties: {
+    current_password: { type: 'string', minLength: 1, maxLength: 255 },
+    new_password:     { type: 'string', minLength: 8, maxLength: 255 },
+  },
+};
+
+module.exports = { loginBody, registerBody, updateProfileBody, changePasswordBody, VALID_MAJORS };

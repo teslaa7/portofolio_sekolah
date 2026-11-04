@@ -66,22 +66,24 @@ export function AdminHeader({ onOpenSidebar, pageTitle = 'Dashboard' }) {
         <div className="h-7 w-px bg-slate-200 hidden sm:block mx-1" />
 
         <div className="flex items-center gap-2.5 pl-1">
-          <img
-            src={
-              user?.avatar ||
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
-            }
-            alt={user?.name || 'User'}
-            className="w-9 h-9 rounded-full object-cover border border-slate-200"
-          />
-          <div className="hidden lg:block text-left">
-            <span className="block text-xs font-semibold text-slate-800 leading-tight">
-              {user?.name || 'Pengguna'}
-            </span>
-            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-              {roleLabel}
-            </span>
-          </div>
+          <Link to="/admin/profil" className="flex items-center gap-2.5" title="Edit Profil">
+            <img
+              src={
+                user?.avatar ||
+                'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+              }
+              alt={user?.name || 'User'}
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 hover:ring-2 hover:ring-[#0B2E6B] transition-all"
+            />
+            <div className="hidden lg:block text-left">
+              <span className="block text-xs font-semibold text-slate-800 leading-tight">
+                {user?.name || 'Pengguna'}
+              </span>
+              <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                {roleLabel}
+              </span>
+            </div>
+          </Link>
         </div>
 
         <button

@@ -4,28 +4,20 @@ import { authService } from '../services/authService.js';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // User diambil dari /auth/me bila ada token di localStorage (persistensi sesi).
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Inisialisasi: cek sesi via token yang tersimpan saat aplikasi dimuat
     const initAuth = async () => {
       try {
         const res = await authService.getCurrentUser();
-        if (res.success && res.data) {
-          setUser(res.data);
-        } else {
-          setUser(null);
-        }
-      } catch (err) {
-        console.error('Error checking auth:', err);
+        setUser(res.success && res.data ? res.data : null);
+      } catch {
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-
     initAuth();
   }, []);
 
@@ -72,6 +64,23 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Update profil lalu sinkronisasi user di context.
+   * Sidebar & header langsung mencerminkan data baru.
+   */
+  const updateProfile = async (payload) => {
+    try {
+      const res = await authService.updateProfile(payload);
+      if (res.success && res.data) {
+        setUser(res.data);
+        return { success: true, message: res.message };
+      }
+      return { success: false, message: res.message };
+    } catch (err) {
+      return { success: false, message: err.message || 'Terjadi kesalahan sistem' };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: Boolean(user),
@@ -81,6 +90,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -88,9 +98,7 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth harus digunakan di dalam AuthProvider');
-  }
+  if (!context) throw new Error('useAuth harus digunakan di dalam AuthProvider');
   return context;
 }
 

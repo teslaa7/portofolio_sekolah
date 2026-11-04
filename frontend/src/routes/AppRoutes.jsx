@@ -23,6 +23,8 @@ import { AddPortfolioPage } from '../pages/admin/AddPortfolioPage.jsx';
 import { EditPortfolioPage } from '../pages/admin/EditPortfolioPage.jsx';
 import { ManageCategoryPage } from '../pages/admin/ManageCategoryPage.jsx';
 import { ManageStudentPage } from '../pages/admin/ManageStudentPage.jsx';
+import { EditProfilePage } from '../pages/admin/EditProfilePage.jsx';
+import { StudentReviewsPage } from '../pages/admin/StudentReviewsPage.jsx';
 
 export function AppRoutes() {
   return (
@@ -54,6 +56,14 @@ export function AppRoutes() {
           <Route path="/admin/portofolio" element={<ManagePortfolioPage />} />
           <Route path="/admin/portofolio/tambah" element={<AddPortfolioPage />} />
           <Route path="/admin/portofolio/:id/edit" element={<EditPortfolioPage />} />
+          <Route path="/admin/profil" element={<EditProfilePage />} />
+        </Route>
+      </Route>
+
+      {/* Rute hanya Murid */}
+      <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/ulasan" element={<StudentReviewsPage />} />
         </Route>
       </Route>
 

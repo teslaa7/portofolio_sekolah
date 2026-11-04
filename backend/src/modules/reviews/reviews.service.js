@@ -118,3 +118,53 @@ module.exports = {
   removeReview,
   getLatestReviews,
 };
+
+// ── Tambahan: ulasan milik user & komunitas ──────────────────────────────────
+const {
+  findReviewsByOwner,
+  countReviewsByOwner,
+  getOwnerReviewSummary,
+  findCommunityReviews,
+  countCommunityReviews,
+} = require('./reviews.repository');
+
+/**
+ * Ulasan pada karya milik user login (untuk tab "Ulasan di Karya Saya").
+ */
+async function getMyReviews(db, userId, params) {
+  const { page, limit, offset } = getPagination(params.page, params.limit);
+  const safeLimit = Math.min(limit, 50);
+
+  const [rows, total, ownerSummary] = await Promise.all([
+    findReviewsByOwner(db, userId, { limit: safeLimit, offset }),
+    countReviewsByOwner(db, userId),
+    getOwnerReviewSummary(db, userId),
+  ]);
+
+  return {
+    data: rows,
+    meta: { page, limit: safeLimit, total, totalPages: getTotalPages(total, safeLimit) },
+    summary: ownerSummary,
+  };
+}
+
+/**
+ * Ulasan pada karya published milik murid lain (untuk tab "Ulasan Karya Murid Lain").
+ */
+async function getCommunityReviews(db, userId, params) {
+  const { page, limit, offset } = getPagination(params.page, params.limit);
+  const safeLimit = Math.min(limit, 50);
+
+  const [rows, total] = await Promise.all([
+    findCommunityReviews(db, userId, { limit: safeLimit, offset }),
+    countCommunityReviews(db, userId),
+  ]);
+
+  return {
+    data: rows,
+    meta: { page, limit: safeLimit, total, totalPages: getTotalPages(total, safeLimit) },
+  };
+}
+
+// Tambahkan ke module.exports yang sudah ada
+Object.assign(module.exports, { getMyReviews, getCommunityReviews });

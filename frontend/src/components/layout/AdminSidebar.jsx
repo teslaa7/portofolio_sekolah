@@ -11,6 +11,8 @@ import {
   X,
   BookOpen,
   Users,
+  UserCog,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
@@ -43,6 +45,7 @@ export function AdminSidebar({ isOpen, onClose }) {
     { label: 'Tambah Portofolio', path: '/admin/portofolio/tambah', icon: PlusCircle, end: true },
     { label: 'Kelola Kategori', path: '/admin/kategori', icon: Tags, end: false },
     { label: 'Kelola Murid', path: '/admin/murid', icon: Users, end: false },
+    { label: 'Edit Profil', path: '/admin/profil', icon: UserCog, end: true },
   ];
 
   const studentLinks = [
@@ -54,6 +57,8 @@ export function AdminSidebar({ isOpen, onClose }) {
       excludePaths: ['/admin/portofolio/tambah'],
     },
     { label: 'Tambah Portofolio', path: '/admin/portofolio/tambah', icon: PlusCircle, end: true },
+    { label: 'Komentar & Ulasan', path: '/admin/ulasan', icon: MessageSquare, end: true },
+    { label: 'Edit Profil', path: '/admin/profil', icon: UserCog, end: true },
   ];
 
   const navLinks = isStudent ? studentLinks : adminLinks;
@@ -100,21 +105,25 @@ export function AdminSidebar({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* User Card */}
-        <div className="p-4 mx-4 my-4 rounded-xl bg-blue-900/50 border border-blue-800/60 flex items-center gap-3">
+        {/* User Card — klik menuju halaman Edit Profil */}
+        <Link
+          to="/admin/profil"
+          className="p-4 mx-4 my-4 rounded-xl bg-blue-900/50 border border-blue-800/60 flex items-center gap-3 hover:bg-blue-800/60 transition-colors"
+          onClick={onClose}
+        >
           <img
             src={
               user?.avatar ||
               'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
             }
             alt={user?.name || 'Pengguna'}
-            className="w-10 h-10 rounded-full object-cover border-2 border-[#F2B705]"
+            className="w-10 h-10 rounded-full object-cover border-2 border-[#F2B705] shrink-0"
           />
           <div className="overflow-hidden">
             <h5 className="text-sm font-semibold text-white truncate">{user?.name || 'Pengguna'}</h5>
             <p className="text-xs text-blue-200/80 truncate">{user?.email || ''}</p>
           </div>
-        </div>
+        </Link>
 
         {/* Main Navigation */}
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">

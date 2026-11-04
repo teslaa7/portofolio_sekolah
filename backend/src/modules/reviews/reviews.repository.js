@@ -184,3 +184,113 @@ module.exports = {
   deleteReviewById,
   findLatestReviews,
 };
+
+/**
+ * Ulasan pada karya milik user login (portfolios.owner_id = userId).
+ * Sertakan judul, slug, thumbnail, dan status portofolio.
+ */
+async function findReviewsByOwner(db, userId, { limit, offset }) {
+  const [rows] = await db.query(
+    `SELECT r.id, r.portfolio_id, r.name, r.rating, r.comment,
+            r.created_at, r.updated_at,
+            p.title  AS portfolio_title,
+            p.slug   AS portfolio_slug,
+            p.thumbnail_url,
+            p.status AS portfolio_status
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     WHERE p.owner_id = ?
+     ORDER BY r.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [Number(userId), limit, offset]
+  );
+  return rows.map((row) => ({
+    ...mapReview(row),
+    portfolio_title:  row.portfolio_title,
+    portfolio_slug:   row.portfolio_slug,
+    thumbnail_url:    row.thumbnail_url,
+    portfolio_status: row.portfolio_status,
+  }));
+}
+
+async function countReviewsByOwner(db, userId) {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     WHERE p.owner_id = ?`,
+    [Number(userId)]
+  );
+  return Number(rows[0].total);
+}
+
+/** Ringkasan ulasan milik owner (total & avg). */
+async function getOwnerReviewSummary(db, userId) {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS total_reviews, IFNULL(AVG(r.rating), 0) AS avg_rating,
+            COUNT(DISTINCT r.portfolio_id) AS portfolio_count
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     WHERE p.owner_id = ?`,
+    [Number(userId)]
+  );
+  const row = rows[0];
+  return {
+    total_reviews:   Number(row.total_reviews),
+    avg_rating:      Number(Number(row.avg_rating).toFixed(1)),
+    portfolio_count: Number(row.portfolio_count),
+  };
+}
+
+/**
+ * Ulasan pada karya published milik murid LAIN (owner_id IS NOT NULL AND owner_id <> userId).
+ * Sertakan judul, slug, thumbnail, dan nama pemilik karya.
+ */
+async function findCommunityReviews(db, userId, { limit, offset }) {
+  const [rows] = await db.query(
+    `SELECT r.id, r.portfolio_id, r.name, r.rating, r.comment,
+            r.created_at, r.updated_at,
+            p.title  AS portfolio_title,
+            p.slug   AS portfolio_slug,
+            p.thumbnail_url,
+            u.name   AS owner_name
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     INNER JOIN users u ON p.owner_id = u.id
+     WHERE p.status = 'published'
+       AND p.owner_id IS NOT NULL
+       AND p.owner_id <> ?
+     ORDER BY r.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [Number(userId), limit, offset]
+  );
+  return rows.map((row) => ({
+    ...mapReview(row),
+    portfolio_title: row.portfolio_title,
+    portfolio_slug:  row.portfolio_slug,
+    thumbnail_url:   row.thumbnail_url,
+    owner_name:      row.owner_name,
+  }));
+}
+
+async function countCommunityReviews(db, userId) {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     WHERE p.status = 'published'
+       AND p.owner_id IS NOT NULL
+       AND p.owner_id <> ?`,
+    [Number(userId)]
+  );
+  return Number(rows[0].total);
+}
+
+// Ekspor tambahan di akhir (CommonJS append-safe)
+Object.assign(module.exports, {
+  findReviewsByOwner,
+  countReviewsByOwner,
+  getOwnerReviewSummary,
+  findCommunityReviews,
+  countCommunityReviews,
+});
