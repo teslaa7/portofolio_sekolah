@@ -11,7 +11,7 @@ const {
   countPortfoliosByOwner,
   deleteStudentById,
 } = require('./students.repository');
-const { MAJORS } = require('./students.schema');
+const { isMajorNameValid } = require('../majors/majors.repository');
 
 const URL_REGEX = /^https?:\/\/.+$/;
 
@@ -63,7 +63,7 @@ async function createStudent(db, payload) {
   if (password.length < 6 || password.length > 72) {
     errors.push({ field: 'password', message: 'Password harus 6-72 karakter.' });
   }
-  if (!MAJORS.includes(payload.major)) {
+  if (!(await isMajorNameValid(db, payload.major))) {
     errors.push({ field: 'major', message: 'Jurusan tidak valid.' });
   }
   const avErr = validateAvatar(payload.avatar);
@@ -107,7 +107,7 @@ async function updateStudent(db, id, payload) {
     const email = (payload.email || '').trim().toLowerCase();
     if (!email) errors.push({ field: 'email', message: 'Email wajib diisi.' });
   }
-  if (payload.major !== undefined && !MAJORS.includes(payload.major)) {
+  if (payload.major !== undefined && !(await isMajorNameValid(db, payload.major))) {
     errors.push({ field: 'major', message: 'Jurusan tidak valid.' });
   }
   if (payload.avatar !== undefined) {

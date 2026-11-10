@@ -22,8 +22,9 @@ const portfolioProperties = {
     items: { type: 'string', maxLength: 500 },
     maxItems: 20,
   },
-  project_url: { type: 'string', maxLength: 500 },
-  repo_url: { type: 'string', maxLength: 500 },
+  project_url:  { type: 'string', maxLength: 500 },
+  repo_url:     { type: 'string', maxLength: 500 },
+  process_url:  { type: 'string', maxLength: 500 },
   thumbnail_url: { type: 'string', maxLength: MAX_IMAGE_LENGTH, pattern: IMAGE_URL_PATTERN },
   screenshots: {
     type: 'array',

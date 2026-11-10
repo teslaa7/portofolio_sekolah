@@ -9,6 +9,7 @@ const {
   updateUserProfile,
   updateUserPassword,
 } = require('./auth.repository');
+const { isMajorNameValid } = require('../majors/majors.repository');
 
 const DUMMY_HASH = bcrypt.hashSync('dummy-password', 10);
 
@@ -66,6 +67,12 @@ async function registerStudent(db, payload) {
   const name       = payload.name.trim();
   const class_name = payload.class_name.trim();
   const major      = payload.major.trim();
+
+  // Validasi jurusan via tabel majors
+  const majorValid = await isMajorNameValid(db, major);
+  if (!majorValid) {
+    return { user: null, error: 'Jurusan tidak valid. Pilih jurusan yang tersedia.', statusCode: 400 };
+  }
 
   const existing = await findUserByEmail(db, email);
   if (existing) {

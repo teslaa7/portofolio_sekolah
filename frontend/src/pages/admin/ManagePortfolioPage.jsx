@@ -21,13 +21,14 @@ import { SkeletonTableRows } from '../../components/common/LoadingSkeleton.jsx';
 import { EmptyState } from '../../components/common/EmptyState.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
 import { useAuth } from '../../hooks/useAuth.jsx';
-import { MAJORS } from '../../constants/roles.js';
+import { useMajors } from '../../hooks/useMajors.js';
 import { formatShortDate } from '../../utils/formatDate.js';
 import { StarRating } from '../../components/reviews/StarRating.jsx';
 
 export function ManagePortfolioPage() {
   const toast = useToast();
   const { user, isAdmin, isStudent } = useAuth();
+  const { majorNames } = useMajors();
 
   const [portfolios, setPortfolios] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -174,7 +175,7 @@ export function ManagePortfolioPage() {
               onChange={(e) => { setMajor(e.target.value); setPage(1); }}
               options={[
                 { value: '', label: 'Semua Jurusan' },
-                ...MAJORS.map((m) => ({ value: m, label: m })),
+                ...majorNames.map((m) => ({ value: m, label: m })),
               ]}
               className="w-full sm:w-48"
             />
@@ -254,6 +255,11 @@ export function ManagePortfolioPage() {
                               <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                                 <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
                                 Unggulan
+                              </span>
+                            )}
+                            {isAdmin && item.owner_active === false && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-300">
+                                Akun murid nonaktif – disembunyikan
                               </span>
                             )}
                             <span className="text-[11px] text-slate-400 truncate">

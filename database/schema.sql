@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS portfolios (
   tech_stack         TEXT NULL COMMENT 'JSON array string',
   project_url        VARCHAR(500) NOT NULL DEFAULT '',
   repo_url           VARCHAR(500) NOT NULL DEFAULT '',
+  process_url        VARCHAR(500) NOT NULL DEFAULT '' COMMENT 'link Google Drive proses pembuatan',
   thumbnail_url      MEDIUMTEXT NULL COMMENT 'data URL base64 (frontend) atau URL gambar',
   screenshots        MEDIUMTEXT NULL COMMENT 'JSON array string (data URL base64 atau URL)',
   year               SMALLINT UNSIGNED NOT NULL,
@@ -84,4 +85,15 @@ CREATE TABLE IF NOT EXISTS reviews (
   KEY idx_reviews_portfolio (portfolio_id),
   CONSTRAINT fk_reviews_portfolio FOREIGN KEY (portfolio_id) REFERENCES portfolios(id)
     ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Majors ───────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS majors (
+  id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  code        VARCHAR(20)  NOT NULL DEFAULT '',
+  description VARCHAR(300) NOT NULL DEFAULT '',
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_majors_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

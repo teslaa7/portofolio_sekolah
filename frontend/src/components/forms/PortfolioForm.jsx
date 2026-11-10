@@ -15,7 +15,7 @@ import {
 import { Input } from '../common/Input.jsx';
 import { Select } from '../common/Select.jsx';
 import { Button } from '../common/Button.jsx';
-import { MAJORS } from '../../constants/roles.js';
+import { useMajors } from '../../hooks/useMajors.js';
 import { validatePortfolioForm } from '../../utils/validators.js';
 import {
   validateImageFile,
@@ -35,23 +35,23 @@ export function PortfolioForm({
 }) {
   const navigate = useNavigate();
   const isStudent = currentUser?.role === 'student';
+  const { majorNames } = useMajors();
 
   const [formData, setFormData] = useState({
     title: initialData.title || '',
-    // Murid: isi dari akun jika tambah baru, edit bebas
     student_name: initialData.student_name || (isStudent && !isEdit ? currentUser?.name : '') || '',
     class_name: initialData.class_name || (isStudent && !isEdit ? currentUser?.class_name : '') || '',
-    major: initialData.major || (isStudent && !isEdit ? currentUser?.major : MAJORS[0]) || MAJORS[0],
+    major: initialData.major || (isStudent && !isEdit ? currentUser?.major : '') || '',
     category_id: initialData.category_id || (categories[0]?.id || 1),
     short_description: initialData.short_description || '',
     description: initialData.description || '',
     year: initialData.year || new Date().getFullYear(),
     project_url: initialData.project_url || '',
     repo_url: initialData.repo_url || '',
+    process_url: initialData.process_url || '',
     thumbnail_url: initialData.thumbnail_url || '',
     tech_stack: initialData.tech_stack || ['React', 'Tailwind CSS'],
     screenshots: initialData.screenshots || [],
-    // Murid default published
     status: initialData.status || (isStudent ? 'published' : 'published'),
     is_featured: Boolean(initialData.is_featured),
   });
@@ -194,7 +194,7 @@ export function PortfolioForm({
     onSubmit(formData);
   };
 
-  const majorOptions = MAJORS.map((m) => ({ value: m, label: m }));
+  const majorOptions = majorNames.map((m) => ({ value: m, label: m }));
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
 
   return (

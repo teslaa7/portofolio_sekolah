@@ -18,14 +18,16 @@ function mapReview(row) {
 }
 
 /**
- * Cek apakah portofolio ada dan berstatus published.
- * @param {import('mysql2/promise').Pool} db
- * @param {number|string} id
- * @returns {Promise<object|null>}
+ * Cek apakah portofolio ada dan berstatus published + pemilik aktif.
  */
 async function findPublishedPortfolioById(db, id) {
   const [rows] = await db.query(
-    "SELECT id, title, slug FROM portfolios WHERE id = ? AND status = 'published' LIMIT 1",
+    `SELECT p.id, p.title, p.slug
+     FROM portfolios p
+     LEFT JOIN users u ON p.owner_id = u.id
+     WHERE p.id = ? AND p.status = 'published'
+       AND (p.owner_id IS NULL OR u.is_active = 1)
+     LIMIT 1`,
     [Number(id)]
   );
   return rows[0] || null;
@@ -150,7 +152,7 @@ async function deleteReviewById(db, id) {
 }
 
 /**
- * N review terbaru dari portofolio published, sertakan title & slug portofolio.
+ * N review terbaru dari portofolio published + pemilik aktif.
  */
 async function findLatestReviews(db, limit) {
   const safeLimit = Math.min(Math.max(1, parseInt(limit, 10) || 4), 20);
@@ -160,7 +162,9 @@ async function findLatestReviews(db, limit) {
             p.title AS portfolio_title, p.slug AS portfolio_slug
      FROM reviews r
      INNER JOIN portfolios p ON r.portfolio_id = p.id
+     LEFT JOIN users u ON p.owner_id = u.id
      WHERE p.status = 'published'
+       AND (p.owner_id IS NULL OR u.is_active = 1)
      ORDER BY r.created_at DESC
      LIMIT ?`,
     [safeLimit]
@@ -168,7 +172,7 @@ async function findLatestReviews(db, limit) {
   return rows.map((row) => ({
     ...mapReview(row),
     portfolio_title: row.portfolio_title,
-    portfolio_slug: row.portfolio_slug,
+    portfolio_slug:  row.portfolio_slug,
   }));
 }
 
@@ -260,6 +264,7 @@ async function findCommunityReviews(db, userId, { limit, offset }) {
      WHERE p.status = 'published'
        AND p.owner_id IS NOT NULL
        AND p.owner_id <> ?
+       AND u.is_active = 1
      ORDER BY r.created_at DESC
      LIMIT ? OFFSET ?`,
     [Number(userId), limit, offset]
@@ -280,7 +285,8 @@ async function countCommunityReviews(db, userId) {
      INNER JOIN portfolios p ON r.portfolio_id = p.id
      WHERE p.status = 'published'
        AND p.owner_id IS NOT NULL
-       AND p.owner_id <> ?`,
+       AND p.owner_id <> ?
+       AND u.is_active = 1`,
     [Number(userId)]
   );
   return Number(rows[0].total);

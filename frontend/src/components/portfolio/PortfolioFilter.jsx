@@ -1,19 +1,16 @@
 import React from 'react';
-import { Filter, RotateCcw, ArrowUpDown } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { SearchBar } from '../common/SearchBar.jsx';
 import { Select } from '../common/Select.jsx';
 import { Button } from '../common/Button.jsx';
-import { MAJORS } from '../../constants/roles.js';
+import { useMajors } from '../../hooks/useMajors.js';
 
-export function PortfolioFilter({
-  filters,
-  categories = [],
-  onFilterChange,
-  onReset,
-}) {
+export function PortfolioFilter({ filters, categories = [], onFilterChange, onReset }) {
+  const { majorNames } = useMajors();
+
   const majorOptions = [
     { value: '', label: 'Semua Jurusan' },
-    ...MAJORS.map((m) => ({ value: m, label: m })),
+    ...majorNames.map((m) => ({ value: m, label: m })),
   ];
 
   const categoryOptions = [

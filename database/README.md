@@ -7,31 +7,29 @@ Skema dan data awal untuk MariaDB 10.4+ (XAMPP / phpMyAdmin).
 | File | Isi |
 |------|-----|
 | `create_database.sql` | Membuat database `portofolio_sekolah` (jalankan pertama). |
-| `schema.sql` | Struktur tabel saja (`users`, `categories`, `portfolios`, `reviews`). Aman dijalankan berulang (`IF NOT EXISTS`). |
+| `schema.sql` | Struktur tabel (`users`, `categories`, `portfolios`, `reviews`, `majors`). Aman dijalankan berulang (`IF NOT EXISTS`). |
 | `seed.sql` | Data awal untuk development. **Menghapus semua data lama lalu mengisi ulang.** |
+| `migrations/001_majors_and_process_url.sql` | Migrasi untuk database yang sudah ada: tambah tabel `majors`, kolom `process_url`, dan 4 jurusan awal. |
 
-## Urutan Import di phpMyAdmin
+## Setup Baru (database kosong)
 
-1. **`create_database.sql`** — buat database. Lalu pilih database `portofolio_sekolah` di panel kiri.
+1. **`create_database.sql`** — buat database.
 2. **`schema.sql`** — buat struktur tabel.
 3. **`seed.sql`** — isi data awal.
 
-Cara import: tab **Import** → pilih file → **Go**.
+Cara import di phpMyAdmin: pilih database → tab **Import** → pilih file → **Go**.
 
-## Akun Demo
+## Migrasi (database yang sudah ada)
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin (guru) | `admin@sekolah.sch.id` | `admin123` |
-| Murid | `ahmad@siswa.sch.id` | `siswa123` |
-| Murid | `siti@siswa.sch.id` | `siswa123` |
-| Murid | `rani@siswa.sch.id` | `siswa123` |
+Jalankan `migrations/001_majors_and_process_url.sql` di phpMyAdmin:
+1. Pilih database `portofolio_sekolah`.
+2. Tab **Import** → pilih `migrations/001_majors_and_process_url.sql` → **Go**.
 
-## Catatan Penting (Perubahan Struktur)
+Migrasi ini bersifat idempotent — aman dijalankan lebih dari sekali. Setelah migrasi:
+- Tabel `majors` terisi 4 jurusan.
+- Kolom `process_url` tersedia di `portfolios` (semua baris lama bernilai `''`).
+- Data karya & murid lama tetap cocok karena nama jurusan di tabel `majors` identik dengan nama yang sudah digunakan.
 
-Karena struktur tabel berubah (kolom baru di `users`, `owner_id` di `portfolios`, dsb.), **database lama harus dihapus lalu dibuat ulang**. Jalankan ulang ketiga file secara berurutan:
+> **Login admin awal** tersedia di `seed.sql`. Segera ganti password melalui menu **Edit Profil** setelah pertama kali masuk.
 
-1. Hapus database lama (di phpMyAdmin: klik database → tab **Operations** → **Drop database**, atau jalankan `DROP DATABASE portofolio_sekolah;`).
-2. Import `create_database.sql` → `schema.sql` → `seed.sql`.
-
-> Catatan: `seed.sql` mengosongkan tabel (`reviews`, `portfolios`, `categories`, `users`) dengan `DELETE` (bukan `TRUNCATE`) serta mereset `AUTO_INCREMENT` dalam blok `FOREIGN_KEY_CHECKS = 0`. **Jangan** jalankan `seed.sql` di database yang sudah berisi data asli.
+> `seed.sql` mengosongkan semua tabel. **Jangan** jalankan di database production yang sudah berisi data asli.

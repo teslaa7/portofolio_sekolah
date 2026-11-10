@@ -16,11 +16,13 @@ SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM reviews;
 DELETE FROM portfolios;
 DELETE FROM categories;
+DELETE FROM majors;
 DELETE FROM users;
 
 ALTER TABLE reviews    AUTO_INCREMENT = 1;
 ALTER TABLE portfolios AUTO_INCREMENT = 1;
 ALTER TABLE categories AUTO_INCREMENT = 1;
+ALTER TABLE majors     AUTO_INCREMENT = 1;
 ALTER TABLE users      AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -42,11 +44,18 @@ INSERT INTO categories (id, name, slug) VALUES
 (4, 'Jaringan',          'jaringan'),
 (5, 'Multimedia',        'multimedia');
 
+-- ── Majors ───────────────────────────────────────────────────────────────────
+INSERT INTO majors (id, name, code, description) VALUES
+(1, 'Rekayasa Perangkat Lunak (RPL)',         'RPL', 'Pengembangan web app modern, sistem informasi manajemen, database relasional, dan mobile PWA.'),
+(2, 'Teknik Komputer & Jaringan (TKJ)',       'TKJ', 'Administrasi infrastruktur server, otomasi jaringan MikroTik/Cisco, dan monitoring sistem lab.'),
+(3, 'Desain Komunikasi Visual / Multimedia',  'DKV', 'UI/UX design figma, animasi interaktif, company profile kreatif, dan branding visual digital.'),
+(4, 'Akuntansi & Keuangan Lembaga',           'AKL', 'Digitalisasi pembukuan UKM, spreadsheet otomatisasi keuangan, dan audit laporan kas digital.');
+
 -- ── Portfolios ───────────────────────────────────────────────────────────────
 -- owner_id: 2 = Ahmad Fauzi (RPL), 3 = Siti Rahayu (TKJ), 4 = Rani Dewi (Multimedia), NULL = karya sekolah/guru
 INSERT INTO portfolios
   (id, title, slug, short_description, description, student_name, class_name, major,
-   category_id, tech_stack, project_url, repo_url, thumbnail_url, screenshots,
+   category_id, tech_stack, project_url, repo_url, process_url, thumbnail_url, screenshots,
    year, status, is_featured, owner_id)
 VALUES
 (
@@ -62,6 +71,7 @@ VALUES
   '["PHP", "MySQL", "Bootstrap", "jQuery"]',
   'https://contoh.com/perpustakaan',
   'https://github.com/example/perpustakaan',
+  '',
   'https://picsum.photos/seed/perpustakaan/600/400',
   '["https://picsum.photos/seed/perpustakaan-1/800/500","https://picsum.photos/seed/perpustakaan-2/800/500"]',
   2025,
@@ -82,6 +92,7 @@ VALUES
   '["Kotlin", "Firebase", "Android Studio", "QR Code"]',
   '',
   'https://github.com/example/absensi-mobile',
+  '',
   'https://picsum.photos/seed/absensi/600/400',
   '["https://picsum.photos/seed/absensi-1/800/500"]',
   2025,
@@ -102,6 +113,7 @@ VALUES
   '["Vite", "React", "Framer Motion", "Tailwind CSS"]',
   'https://batik-sekarmelati.id.demo',
   'https://github.com/example/batik-sekar-melati',
+  '',
   'https://picsum.photos/seed/batik-sekar/600/400',
   '["https://picsum.photos/seed/batik-sekar-1/800/500","https://picsum.photos/seed/batik-sekar-2/800/500"]',
   2024,
@@ -122,6 +134,7 @@ VALUES
   '["React", "Chart.js", "RouterOS API", "Node.js"]',
   'https://netlab-smk.internal-demo.net',
   'https://github.com/example/mikrotik-lab-monitor',
+  '',
   'https://picsum.photos/seed/netlab-smk/600/400',
   '["https://picsum.photos/seed/netlab-1/800/500","https://picsum.photos/seed/netlab-2/800/500"]',
   2024,
@@ -142,6 +155,7 @@ VALUES
   '["React", "Tailwind CSS", "SheetJS", "LocalForage"]',
   'https://bukukas-smk-demo.vercel.app',
   'https://github.com/example/akuntansi-bukukas',
+  '',
   'https://picsum.photos/seed/bukukas-smk/600/400',
   '["https://picsum.photos/seed/bukukas-1/800/500","https://picsum.photos/seed/bukukas-2/800/500"]',
   2026,
@@ -162,6 +176,7 @@ VALUES
   '["React", "Zustand", "Tailwind CSS", "Supabase"]',
   'https://bambucraft-demo.netlify.app',
   'https://github.com/example/bambu-craft-ecommerce',
+  '',
   'https://picsum.photos/seed/bambucraft/600/400',
   '["https://picsum.photos/seed/bambucraft-1/800/500","https://picsum.photos/seed/bambucraft-2/800/500"]',
   2025,
@@ -182,6 +197,7 @@ VALUES
   '["Next.js", "Tailwind CSS", "Markdown", "Vercel"]',
   'https://wartasiswa.sch.id.demo',
   'https://github.com/example/wartasiswa-smk',
+  '',
   'https://picsum.photos/seed/wartasiswa/600/400',
   '["https://picsum.photos/seed/warta-1/800/500","https://picsum.photos/seed/warta-2/800/500"]',
   2026,
@@ -202,6 +218,7 @@ VALUES
   '["React", "Zustand", "Tailwind CSS", "WebRTC"]',
   'https://inventaris-bengkel.smk.demo',
   'https://github.com/example/inventaris-bengkel-smk',
+  '',
   'https://picsum.photos/seed/inventaris-bengkel/600/400',
   '["https://picsum.photos/seed/inven-1/800/500"]',
   2026,

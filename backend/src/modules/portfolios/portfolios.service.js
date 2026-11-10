@@ -17,17 +17,25 @@ const {
 // URL regex sederhana (http/https)
 const URL_REGEX = /^https?:\/\/.+/;
 
-// Data URL base64 untuk gambar (jpeg/png/webp). Boleh juga URL http(s) biasa.
+// Google Drive URL validator
+const DRIVE_REGEX = /^https:\/\/(drive|docs)\.google\.com\/.+/;
+
+// Data URL base64 untuk gambar
 const IMAGE_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+))$/;
 const MAX_IMAGE_LENGTH = 1500000;
 
-/**
- * Validasi URL, kembalikan error jika tidak valid (tapi boleh kosong).
- */
 function validateUrl(value, fieldName) {
   if (!value || value.trim() === '') return null;
   if (!URL_REGEX.test(value.trim())) {
     return { field: fieldName, message: `${fieldName} harus berupa URL http/https yang valid atau dikosongkan.` };
+  }
+  return null;
+}
+
+function validateProcessUrl(value) {
+  if (!value || value.trim() === '') return null;
+  if (!DRIVE_REGEX.test(value.trim())) {
+    return { field: 'process_url', message: 'Link proses pembuatan harus berupa tautan Google Drive (drive.google.com / docs.google.com).' };
   }
   return null;
 }
@@ -94,9 +102,9 @@ async function listPortfolios(db, params, actor = null) {
 async function getPortfolioBySlug(db, slug, actor = null) {
   const portfolio = await findPortfolioBySlug(db, slug);
   if (!portfolio) return null;
-  // Tampil jika published, atau pemanggil admin, atau pemilik karya
   const isAdmin = Boolean(actor && actor.role === 'admin');
   const isOwner = Boolean(actor && actor.role === 'student' && portfolio.owner_id === actor.id);
+  if (!isAdmin && !portfolio.owner_active) return null; // pemilik nonaktif → 404 untuk publik
   if (portfolio.status === 'published' || isAdmin || isOwner) return portfolio;
   return null;
 }
@@ -136,8 +144,10 @@ async function createPortfolio(db, payload, actor = null) {
   // Validasi URL
   const urlError1 = validateUrl(payload.project_url, 'project_url');
   const urlError2 = validateUrl(payload.repo_url, 'repo_url');
+  const urlError3 = validateProcessUrl(payload.process_url);
   if (urlError1) errors.push(urlError1);
   if (urlError2) errors.push(urlError2);
+  if (urlError3) errors.push(urlError3);
 
   // Validasi gambar (thumbnail & screenshots) — menerima data URL base64
   if (payload.thumbnail_url && payload.thumbnail_url.trim()) {
@@ -228,6 +238,7 @@ async function createPortfolio(db, payload, actor = null) {
     tech_stack: safeJsonStringify(Array.isArray(payload.tech_stack) ? payload.tech_stack : []),
     project_url: (payload.project_url || '').trim(),
     repo_url: (payload.repo_url || '').trim(),
+    process_url: (payload.process_url || '').trim(),
     thumbnail_url,
     screenshots: safeJsonStringify(screenshots),
     year: payload.year ? Number(payload.year) : new Date().getFullYear(),
@@ -271,6 +282,10 @@ async function updatePortfolio(db, id, payload, actor = null) {
   }
   if (payload.repo_url !== undefined) {
     const err = validateUrl(payload.repo_url, 'repo_url');
+    if (err) errors.push(err);
+  }
+  if (payload.process_url !== undefined) {
+    const err = validateProcessUrl(payload.process_url);
     if (err) errors.push(err);
   }
 
@@ -338,6 +353,7 @@ async function updatePortfolio(db, id, payload, actor = null) {
   if (payload.tech_stack !== undefined) updateData.tech_stack = safeJsonStringify(payload.tech_stack);
   if (payload.project_url !== undefined) updateData.project_url = payload.project_url.trim();
   if (payload.repo_url !== undefined) updateData.repo_url = payload.repo_url.trim();
+  if (payload.process_url !== undefined) updateData.process_url = payload.process_url.trim();
   if (payload.thumbnail_url !== undefined) updateData.thumbnail_url = payload.thumbnail_url.trim();
   if (payload.screenshots !== undefined) {
     const cleaned = Array.isArray(payload.screenshots)

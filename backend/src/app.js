@@ -49,6 +49,7 @@ async function buildApp() {
   await app.register(require('./modules/auth/auth.routes'), { prefix: '/api/auth' });
   await app.register(require('./modules/portfolios/portfolios.routes'), { prefix: '/api' });
   await app.register(require('./modules/categories/categories.routes'), { prefix: '/api' });
+  await app.register(require('./modules/majors/majors.routes'), { prefix: '/api' });
   await app.register(require('./modules/students/students.routes'), { prefix: '/api' });
   await app.register(require('./modules/dashboard/dashboard.routes'), { prefix: '/api' });
   await app.register(require('./modules/reviews/reviews.routes'), { prefix: '/api' });
