@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Github,
+  FolderOpen,
   Sparkles,
   Upload,
   Trash2,
@@ -445,6 +446,19 @@ export function PortfolioForm({
             leftIcon={Github}
             error={errors.repo_url}
             helperText="Kode sumber di GitHub atau GitLab."
+          />
+
+          {/* Link Google Drive (LKPD / Dokumentasi Pengerjaan) — opsional, semua role */}
+          <Input
+            label="Link Google Drive (LKPD / Dokumentasi Pengerjaan) (Opsional)"
+            name="process_url"
+            value={formData.process_url}
+            onChange={handleChange}
+            placeholder="https://drive.google.com/drive/folders/..."
+            leftIcon={FolderOpen}
+            error={errors.process_url}
+            helperText="Isi dengan link Google Drive berisi LKPD atau dokumentasi proses pengerjaan. Pastikan akses dibuka ke 'Siapa saja yang memiliki link'."
+            className="md:col-span-2"
           />
         </div>
       </div>

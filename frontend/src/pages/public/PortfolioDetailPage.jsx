@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ExternalLink,
   Github,
+  FolderOpen,
   Calendar,
   User,
   GraduationCap,
@@ -309,6 +310,25 @@ export function PortfolioDetailPage() {
                       iconPosition="left"
                     >
                       Lihat Repository GitHub
+                    </Button>
+                  </a>
+                )}
+
+                {portfolio.process_url && (
+                  <a
+                    href={portfolio.process_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button
+                      variant="outline"
+                      size="md"
+                      className="w-full"
+                      icon={FolderOpen}
+                      iconPosition="left"
+                    >
+                      Lihat LKPD / Dokumentasi Pengerjaan
                     </Button>
                   </a>
                 )}

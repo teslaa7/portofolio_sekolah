@@ -2,6 +2,9 @@
  * Kumpulan fungsi validasi form
  */
 
+// Sama dengan DRIVE_REGEX di backend (portfolios.service.js)
+const DRIVE_URL_REGEX = /^https:\/\/(drive|docs)\.google\.com\/.+/;
+
 export function isValidUrl(url) {
   if (!url) return false;
   try {
@@ -61,6 +64,11 @@ export function validatePortfolioForm(formData) {
 
   if (formData.repo_url && !isValidUrl(formData.repo_url)) {
     errors.repo_url = 'URL repository harus berupa URL valid (http:// atau https://)';
+  }
+
+  // process_url opsional; jika diisi harus link Google Drive (drive/docs.google.com)
+  if (formData.process_url && formData.process_url.trim() && !DRIVE_URL_REGEX.test(formData.process_url.trim())) {
+    errors.process_url = 'Link harus berupa tautan Google Drive (drive.google.com / docs.google.com).';
   }
 
   if (formData.thumbnail_url && !isValidUrl(formData.thumbnail_url) && !formData.thumbnail_url.startsWith('data:image/')) {

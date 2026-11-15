@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Star, User } from 'lucide-react';
+import { ExternalLink, Star, User, FolderOpen } from 'lucide-react';
 import { StarRating } from '../reviews/StarRating.jsx';
 
 /**
@@ -51,6 +51,16 @@ export function PortfolioCard({ portfolio, categoryName = '' }) {
           <div className="absolute bottom-3 left-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/90 backdrop-blur-md text-[#0B2E6B] shadow-sm">
               {categoryName}
+            </span>
+          </div>
+        )}
+
+        {/* Dokumentasi (Google Drive) Badge Overlay */}
+        {portfolio.process_url && (
+          <div className="absolute bottom-3 right-3">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold bg-white/90 backdrop-blur-md text-emerald-700 shadow-sm">
+              <FolderOpen className="w-3 h-3" />
+              Dokumentasi
             </span>
           </div>
         )}
