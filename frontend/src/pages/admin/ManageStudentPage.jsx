@@ -33,6 +33,11 @@ export function ManageStudentPage() {
   const [deleting, setDeleting] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Dialog Toggle Aktif/Nonaktif
+  const [toggleOpen, setToggleOpen] = useState(false);
+  const [toggling, setToggling] = useState(null); // murid yang akan di-toggle
+  const [isToggling, setIsToggling] = useState(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -97,16 +102,33 @@ export function ManageStudentPage() {
   };
 
   const handleToggleActive = async (s) => {
+    // Buka dialog konfirmasi (terutama saat menonaktifkan)
+    setToggling(s);
+    setToggleOpen(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!toggling) return;
+    setIsToggling(true);
     try {
-      const res = await studentService.updateStudent(s.id, { is_active: !s.is_active });
+      const willDeactivate = toggling.is_active;
+      const res = await studentService.updateStudent(toggling.id, { is_active: !toggling.is_active });
       if (res.success) {
-        toast.success(res.message);
+        if (willDeactivate) {
+          toast.warning(`Akun ${toggling.name} dinonaktifkan. Karya miliknya disembunyikan dari website publik.`);
+        } else {
+          toast.success(`Akun ${toggling.name} diaktifkan. Karya miliknya tampil kembali.`);
+        }
+        setToggleOpen(false);
+        setToggling(null);
         loadData();
       } else {
         toast.error(res.message || 'Gagal mengubah status');
       }
     } catch {
       toast.error('Terjadi kesalahan');
+    } finally {
+      setIsToggling(false);
     }
   };
 
@@ -338,6 +360,22 @@ export function ManageStudentPage() {
         title="Hapus Murid?"
         message={`Apakah Anda yakin menghapus akun "${deleting?.name}"? Karya milik murid ini tetap ditampilkan tanpa pemilik.`}
         confirmText="Ya, Hapus"
+      />
+
+      {/* Dialog Toggle Aktif/Nonaktif */}
+      <ConfirmDialog
+        isOpen={toggleOpen}
+        onClose={() => setToggleOpen(false)}
+        onConfirm={handleConfirmToggle}
+        isLoading={isToggling}
+        title={toggling?.is_active ? 'Nonaktifkan Akun?' : 'Aktifkan Akun?'}
+        message={
+          toggling?.is_active
+            ? `Karya milik ${toggling?.name} akan disembunyikan dari website publik selama akun nonaktif. Karya akan tampil kembali jika akun diaktifkan.`
+            : `Akun ${toggling?.name} akan diaktifkan kembali. Karya miliknya akan tampil kembali di website publik.`
+        }
+        confirmText={toggling?.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'}
+        confirmVariant={toggling?.is_active ? 'danger' : 'primary'}
       />
     </div>
   );

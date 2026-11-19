@@ -6,7 +6,7 @@ import { authService } from '../../services/authService.js';
 import { Input } from '../../components/common/Input.jsx';
 import { Select } from '../../components/common/Select.jsx';
 import { Button } from '../../components/common/Button.jsx';
-import { MAJORS } from '../../constants/roles.js';
+import { useMajors } from '../../hooks/useMajors.js';
 import { isValidUrl } from '../../utils/validators.js';
 
 /** Avatar fallback: inisial nama dalam lingkaran berwarna. */
@@ -26,6 +26,7 @@ function AvatarFallback({ name }) {
 export function EditProfilePage() {
   const { user, updateProfile, isStudent } = useAuth();
   const toast = useToast();
+  const { majorNames } = useMajors();
 
   // ── Form Profil ──────────────────────────────────────────────────────────
   const [profileForm, setProfileForm] = useState({
@@ -51,7 +52,7 @@ export function EditProfilePage() {
   const [showNew, setShowNew]                 = useState(false);
   const [showConfirm, setShowConfirm]         = useState(false);
 
-  const majorOptions = MAJORS.map((m) => ({ value: m, label: m }));
+  const majorOptions = majorNames.map((m) => ({ value: m, label: m }));
 
   // ── Handle perubahan input profil ────────────────────────────────────────
   const handleProfileChange = (e) => {

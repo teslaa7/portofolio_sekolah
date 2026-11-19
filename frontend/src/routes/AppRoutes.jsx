@@ -23,6 +23,7 @@ import { AddPortfolioPage } from '../pages/admin/AddPortfolioPage.jsx';
 import { EditPortfolioPage } from '../pages/admin/EditPortfolioPage.jsx';
 import { ManageCategoryPage } from '../pages/admin/ManageCategoryPage.jsx';
 import { ManageStudentPage } from '../pages/admin/ManageStudentPage.jsx';
+import { ManageMajorPage } from '../pages/admin/ManageMajorPage.jsx';
 import { EditProfilePage } from '../pages/admin/EditProfilePage.jsx';
 import { StudentReviewsPage } from '../pages/admin/StudentReviewsPage.jsx';
 
@@ -46,6 +47,7 @@ export function AppRoutes() {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<DashboardPage />} />
           <Route path="/admin/kategori" element={<ManageCategoryPage />} />
+          <Route path="/admin/jurusan" element={<ManageMajorPage />} />
           <Route path="/admin/murid" element={<ManageStudentPage />} />
         </Route>
       </Route>

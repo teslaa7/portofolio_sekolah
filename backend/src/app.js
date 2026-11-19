@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const Fastify = require('fastify');
 const env = require('./config/env');
 
@@ -32,6 +33,18 @@ async function buildApp() {
   await app.register(require('./plugins/helmet'));
   await app.register(require('./plugins/db'));
   await app.register(require('./plugins/auth'));
+
+  // Multipart: upload file (maks 2 MB per file)
+  await app.register(require('@fastify/multipart'), {
+    limits: { fileSize: 2 * 1024 * 1024, files: 1 },
+  });
+
+  // Static files: sajikan folder uploads/
+  await app.register(require('@fastify/static'), {
+    root: path.join(__dirname, '..', 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
+  });
 
   // Rate limit global (200 req/menit per IP)
   await app.register(require('@fastify/rate-limit'), {

@@ -324,11 +324,11 @@ export function PortfolioDetailPage() {
                     <Button
                       variant="outline"
                       size="md"
-                      className="w-full"
+                      className="w-full border-[#F2B705] text-[#0B2E6B] hover:bg-amber-50"
                       icon={FolderOpen}
                       iconPosition="left"
                     >
-                      Lihat LKPD / Dokumentasi Pengerjaan
+                      Proses Pembuatan Website
                     </Button>
                   </a>
                 )}

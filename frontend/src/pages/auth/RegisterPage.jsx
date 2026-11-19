@@ -17,13 +17,14 @@ import { useToast } from '../../hooks/useToast.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { Select } from '../../components/common/Select.jsx';
 import { Button } from '../../components/common/Button.jsx';
-import { MAJORS } from '../../constants/roles.js';
+import { useMajors } from '../../hooks/useMajors.js';
 import { validateRegisterForm } from '../../utils/validators.js';
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const { register, isAuthenticated, user } = useAuth();
   const toast = useToast();
+  const { majorNames } = useMajors();
 
   // Jika sudah login, redirect ke halaman default role
   React.useEffect(() => {
@@ -47,7 +48,7 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const majorOptions = MAJORS.map((m) => ({ value: m, label: m }));
+  const majorOptions = majorNames.map((m) => ({ value: m, label: m }));
 
   const handleChange = (e) => {
     const { name, value } = e.target;

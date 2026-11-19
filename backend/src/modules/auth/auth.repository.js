@@ -48,29 +48,26 @@ async function createStudent(db, { name, email, passwordHash, class_name, major 
 }
 
 /**
- * Update profil user.
- * - Admin: hanya name & avatar.
- * - Student: name, avatar, class_name, major + sinkronisasi portfolios dalam satu transaksi.
+ * Update profil user (tidak menyentuh kolom avatar — avatar dikelola lewat endpoint khusus).
  */
-async function updateUserProfile(db, id, { name, avatar, class_name, major, role }) {
+async function updateUserProfile(db, id, { name, class_name, major, role }) {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
     if (role === 'student') {
       await conn.query(
-        'UPDATE users SET name=?, avatar=?, class_name=?, major=?, updated_at=NOW() WHERE id=?',
-        [name, avatar, class_name, major, Number(id)]
+        'UPDATE users SET name=?, class_name=?, major=?, updated_at=NOW() WHERE id=?',
+        [name, class_name, major, Number(id)]
       );
-      // Sinkronisasi salinan di tabel portfolios
       await conn.query(
         'UPDATE portfolios SET student_name=?, class_name=?, major=? WHERE owner_id=?',
         [name, class_name, major, Number(id)]
       );
     } else {
       await conn.query(
-        'UPDATE users SET name=?, avatar=?, updated_at=NOW() WHERE id=?',
-        [name, avatar, Number(id)]
+        'UPDATE users SET name=?, updated_at=NOW() WHERE id=?',
+        [name, Number(id)]
       );
     }
 
@@ -81,6 +78,15 @@ async function updateUserProfile(db, id, { name, avatar, class_name, major, role
   } finally {
     conn.release();
   }
+}
+
+/** Update kolom avatar saja. */
+async function updateUserAvatar(db, id, avatarPath) {
+  const [result] = await db.query(
+    'UPDATE users SET avatar=?, updated_at=NOW() WHERE id=?',
+    [avatarPath, Number(id)]
+  );
+  return result.affectedRows;
 }
 
 /** Update password hash user. */
@@ -98,5 +104,6 @@ module.exports = {
   findUserPasswordById,
   createStudent,
   updateUserProfile,
+  updateUserAvatar,
   updateUserPassword,
 };

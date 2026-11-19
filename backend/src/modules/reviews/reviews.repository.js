@@ -283,6 +283,7 @@ async function countCommunityReviews(db, userId) {
     `SELECT COUNT(*) AS total
      FROM reviews r
      INNER JOIN portfolios p ON r.portfolio_id = p.id
+     INNER JOIN users u ON p.owner_id = u.id
      WHERE p.status = 'published'
        AND p.owner_id IS NOT NULL
        AND p.owner_id <> ?

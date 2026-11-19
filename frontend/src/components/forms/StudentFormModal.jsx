@@ -4,13 +4,8 @@ import { Modal } from '../common/Modal.jsx';
 import { Input } from '../common/Input.jsx';
 import { Select } from '../common/Select.jsx';
 import { Button } from '../common/Button.jsx';
-import { MAJORS } from '../../constants/roles.js';
+import { useMajors } from '../../hooks/useMajors.js';
 
-/**
- * Modal Tambah/Edit Murid.
- * @param {object|null} initialData - data murid untuk mode edit
- * @param {string} serverError - pesan error dari server (mis. 409 email duplikat)
- */
 export function StudentFormModal({
   isOpen,
   onClose,
@@ -20,11 +15,13 @@ export function StudentFormModal({
   serverError = '',
 }) {
   const isEdit = Boolean(initialData);
+  const { majorNames } = useMajors();
+
   const [form, setForm] = useState({
     name: '',
     email: '',
     class_name: '',
-    major: MAJORS[0],
+    major: '',
     password: '',
   });
   const [showPw, setShowPw] = useState(false);
@@ -36,7 +33,7 @@ export function StudentFormModal({
         name: initialData?.name || '',
         email: initialData?.email || '',
         class_name: initialData?.class_name || '',
-        major: initialData?.major || MAJORS[0],
+        major: initialData?.major || '',
         password: '',
       });
       setErrors({});
@@ -57,13 +54,9 @@ export function StudentFormModal({
     if (!form.email.trim()) errs.email = 'Email wajib diisi.';
     if (!form.class_name.trim()) errs.class_name = 'Kelas wajib diisi.';
     if (!form.major) errs.major = 'Jurusan wajib dipilih.';
-    // Tambah: password wajib min 6. Edit: boleh kosong, tapi jika diisi min 6.
     if (!isEdit && (!form.password || form.password.length < 6)) errs.password = 'Password minimal 6 karakter.';
     if (form.password && form.password.length < 6) errs.password = 'Password minimal 6 karakter.';
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
     const payload = {
       name: form.name.trim(),
@@ -75,7 +68,7 @@ export function StudentFormModal({
     onSubmit(payload);
   };
 
-  const majorOptions = MAJORS.map((m) => ({ value: m, label: m }));
+  const majorOptions = majorNames.map((m) => ({ value: m, label: m }));
 
   return (
     <Modal

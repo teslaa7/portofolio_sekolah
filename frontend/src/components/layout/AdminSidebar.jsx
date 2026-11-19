@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   FolderGit2,
   Tags,
+  Layers,
   PlusCircle,
   ExternalLink,
   LogOut,
@@ -44,6 +45,7 @@ export function AdminSidebar({ isOpen, onClose }) {
     },
     { label: 'Tambah Portofolio', path: '/admin/portofolio/tambah', icon: PlusCircle, end: true },
     { label: 'Kelola Kategori', path: '/admin/kategori', icon: Tags, end: false },
+    { label: 'Kelola Jurusan', path: '/admin/jurusan', icon: Layers, end: false },
     { label: 'Kelola Murid', path: '/admin/murid', icon: Users, end: false },
     { label: 'Edit Profil', path: '/admin/profil', icon: UserCog, end: true },
   ];

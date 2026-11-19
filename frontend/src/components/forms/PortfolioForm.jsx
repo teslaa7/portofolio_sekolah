@@ -448,16 +448,16 @@ export function PortfolioForm({
             helperText="Kode sumber di GitHub atau GitLab."
           />
 
-          {/* Link Google Drive (LKPD / Dokumentasi Pengerjaan) — opsional, semua role */}
+          {/* Link Google Drive Proses Pembuatan — opsional, semua role */}
           <Input
-            label="Link Google Drive (LKPD / Dokumentasi Pengerjaan) (Opsional)"
+            label="Link Google Drive Proses Pembuatan (Opsional)"
             name="process_url"
             value={formData.process_url}
             onChange={handleChange}
             placeholder="https://drive.google.com/drive/folders/..."
             leftIcon={FolderOpen}
             error={errors.process_url}
-            helperText="Isi dengan link Google Drive berisi LKPD atau dokumentasi proses pengerjaan. Pastikan akses dibuka ke 'Siapa saja yang memiliki link'."
+            helperText="Folder Drive berisi paper plan, sketsa, dan dokumentasi proses pembuatan website. Atur akses Drive ke 'Siapa saja yang memiliki link' agar bisa dibuka pengunjung."
             className="md:col-span-2"
           />
         </div>

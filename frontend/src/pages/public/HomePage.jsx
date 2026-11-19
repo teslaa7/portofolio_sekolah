@@ -16,6 +16,7 @@ import {
 import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
 import { reviewService } from '../../services/reviewService.js';
+import { useMajors } from '../../hooks/useMajors.js';
 import { PortfolioGrid } from '../../components/portfolio/PortfolioGrid.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { StarRating } from '../../components/reviews/StarRating.jsx';
@@ -29,6 +30,7 @@ export function HomePage() {
   const [latestReviews, setLatestReviews] = useState([]);
   const [portfolioMap, setPortfolioMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const { majors } = useMajors();
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -63,41 +65,20 @@ export function HomePage() {
 
   const stats = [
     { label: 'Karya Digital Dihasilkan', value: '45+', icon: Code2 },
-    { label: 'Jurusan Kejuruan Aktif', value: '4', icon: Layers },
+    { label: 'Jurusan Kejuruan Aktif', value: majors.length || '4', icon: Layers },
     { label: 'Tahun Angkatan Siswa', value: '3+', icon: Compass },
     { label: 'Siswa & Tim Terlibat', value: '80+', icon: Users },
   ];
 
-  const majors = [
-    {
-      name: 'Rekayasa Perangkat Lunak',
-      code: 'RPL',
-      desc: 'Pengembangan web app modern, sistem informasi manajemen, database relasional, dan mobile PWA.',
-      icon: Code2,
-      color: 'bg-blue-600',
-    },
-    {
-      name: 'Teknik Komputer & Jaringan',
-      code: 'TKJ',
-      desc: 'Administrasi infrastruktur server, otomasi jaringan MikroTik/Cisco, dan monitoring sistem lab.',
-      icon: Cpu,
-      color: 'bg-emerald-600',
-    },
-    {
-      name: 'Multimedia & DKV',
-      code: 'DKV',
-      desc: 'UI/UX design figma, animasi interaktif, company profile kreatif, dan branding visual digital.',
-      icon: Palette,
-      color: 'bg-purple-600',
-    },
-    {
-      name: 'Akuntansi & Keuangan',
-      code: 'AKL',
-      desc: 'Digitalisasi pembukuan UKM, spreadsheet otomatisasi keuangan, dan audit laporan kas digital.',
-      icon: Calculator,
-      color: 'bg-amber-600',
-    },
-  ];
+  // Pemetaan ikon & warna berdasarkan kode jurusan (fallback untuk jurusan baru)
+  const MAJOR_ICON_MAP = {
+    RPL: { icon: Code2, color: 'bg-blue-600' },
+    TKJ: { icon: Cpu, color: 'bg-emerald-600' },
+    DKV: { icon: Palette, color: 'bg-purple-600' },
+    AKL: { icon: Calculator, color: 'bg-amber-600' },
+  };
+  const DEFAULT_MAJOR_STYLE = { icon: Layers, color: 'bg-slate-600' };
+  const MAJOR_COLORS = ['bg-blue-600','bg-emerald-600','bg-purple-600','bg-amber-600','bg-rose-600','bg-cyan-600'];
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
@@ -216,32 +197,31 @@ export function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {majors.map((m, idx) => {
-              const Icon = m.icon;
+              const style = MAJOR_ICON_MAP[m.code] || { icon: Layers, color: MAJOR_COLORS[idx % MAJOR_COLORS.length] };
+              const Icon = style.icon;
               return (
                 <div
-                  key={idx}
+                  key={m.id ?? m.code ?? idx}
                   className="rounded-2xl border border-slate-200/80 p-6 bg-[#F5F8FF]/60 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
                 >
                   <div>
-                    <div
-                      className={`w-12 h-12 rounded-xl text-white flex items-center justify-center mb-4 ${m.color}`}
-                    >
+                    <div className={`w-12 h-12 rounded-xl text-white flex items-center justify-center mb-4 ${style.color}`}>
                       <Icon className="w-6 h-6" />
                     </div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Jurusan {m.code}
+                      Jurusan {m.code || ''}
                     </span>
                     <h3 className="text-base font-bold text-[#0F172A] mt-1 mb-2 font-heading">
                       {m.name}
                     </h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">{m.desc}</p>
+                    <p className="text-xs text-slate-600 leading-relaxed">{m.description}</p>
                   </div>
                   <div className="mt-6 pt-4 border-t border-slate-200/60">
                     <Link
                       to={`/portofolio?major=${encodeURIComponent(m.name)}`}
                       className="text-xs font-semibold text-[#0B2E6B] hover:text-[#1E40AF] inline-flex items-center gap-1"
                     >
-                      <span>Lihat Karya {m.code}</span>
+                      <span>Lihat Karya {m.code || m.name}</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>

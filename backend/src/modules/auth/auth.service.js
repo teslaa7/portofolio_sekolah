@@ -7,15 +7,12 @@ const {
   findUserPasswordById,
   createStudent,
   updateUserProfile,
+  updateUserAvatar,
   updateUserPassword,
 } = require('./auth.repository');
 const { isMajorNameValid } = require('../majors/majors.repository');
 
 const DUMMY_HASH = bcrypt.hashSync('dummy-password', 10);
-
-// Avatar boleh URL http(s) atau data URL base64 gambar (sama dengan portfolios).
-const AVATAR_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+))$/;
-const AVATAR_MAX_LENGTH = 500000;
 
 /** Bangun objek user aman (tanpa password & is_active) untuk dikirim ke client. */
 function toSafeUser(user) {
@@ -109,23 +106,10 @@ async function registerStudent(db, payload) {
 
 /**
  * Update profil user yang sedang login.
- * - Trim semua input; avatar kosong disimpan NULL.
- * - Admin: hanya name & avatar (class_name/major diabaikan).
- * - Student: name, avatar, class_name, major (semua wajib dari schema).
+ * Avatar tidak diubah di sini — gunakan endpoint POST/DELETE /auth/avatar.
  */
 async function updateProfile(db, userId, role, payload) {
   const name   = (payload.name || '').trim();
-  const avatar = payload.avatar ? payload.avatar.trim() : null;
-
-  // Validasi avatar: boleh URL http(s) atau data URL gambar; kosong -> NULL
-  if (avatar) {
-    if (avatar.length > AVATAR_MAX_LENGTH) {
-      return { user: null, error: 'Ukuran foto profil terlalu besar (maks ~500 KB).', statusCode: 400 };
-    }
-    if (!AVATAR_URL_REGEX.test(avatar)) {
-      return { user: null, error: 'Foto profil harus berupa URL gambar atau file gambar (JPEG/PNG/WebP) yang valid.', statusCode: 400 };
-    }
-  }
 
   let class_name = '';
   let major      = '';
@@ -141,9 +125,8 @@ async function updateProfile(db, userId, role, payload) {
     }
   }
 
-  await updateUserProfile(db, userId, { name, avatar, class_name, major, role });
+  await updateUserProfile(db, userId, { name, class_name, major, role });
 
-  // Baca ulang dari DB agar response sinkron
   const updated = await findUserById(db, userId);
   return { user: toSafeUser({ ...updated, is_active: 1 }), error: null };
 }
