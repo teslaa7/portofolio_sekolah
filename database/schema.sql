@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   email       VARCHAR(150) NOT NULL,
   password    VARCHAR(255) NOT NULL COMMENT 'hash bcrypt, bukan teks asli',
   role        ENUM('admin','student') NOT NULL DEFAULT 'student',
-  avatar      VARCHAR(500) NULL,
+  avatar      MEDIUMTEXT NULL COMMENT 'URL gambar atau data URL base64',
   class_name  VARCHAR(50)  NOT NULL DEFAULT '',
   major       VARCHAR(100) NOT NULL DEFAULT '',
   is_active   TINYINT(1)   NOT NULL DEFAULT 1,

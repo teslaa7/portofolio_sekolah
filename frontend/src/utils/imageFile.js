@@ -93,3 +93,37 @@ export async function fileToOptimizedDataUrl(file, maxWidth = 1280, quality = 0.
 
   return dataUrl;
 }
+
+/**
+ * Konversi File foto profil menjadi data URL persegi (center-crop), ukuran kecil.
+ * Output JPEG agar ringan (target < 50 KB) karena avatar ikut di daftar murid & header.
+ * Memakai ulang loadImage di atas (tidak menduplikasi kode).
+ * @param {File} file
+ * @param {number} size - sisi persegi output (default 256)
+ * @param {number} quality - kualitas JPEG 0-1 (default 0.85)
+ * @returns {Promise<string>} data URL "data:image/jpeg;base64,..."
+ */
+export async function fileToAvatarDataUrl(file, size = 256, quality = 0.85) {
+  const img = await loadImage(file);
+  const srcW = img.naturalWidth || img.width;
+  const srcH = img.naturalHeight || img.height;
+
+  // Center-crop ke persegi seukuran sisi terpendek
+  const side = Math.min(srcW, srcH);
+  const sx = Math.max(0, (srcW - side) / 2);
+  const sy = Math.max(0, (srcH - side) / 2);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (ctx.imageSmoothingEnabled !== undefined) ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+
+  let dataUrl = canvas.toDataURL('image/jpeg', quality);
+  // Jika masih besar, turunkan kualitas sekali agar tetap ringan
+  if (dataUrl.length > 70000) {
+    dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+  }
+  return dataUrl;
+}

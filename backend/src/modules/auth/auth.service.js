@@ -13,6 +13,10 @@ const { isMajorNameValid } = require('../majors/majors.repository');
 
 const DUMMY_HASH = bcrypt.hashSync('dummy-password', 10);
 
+// Avatar boleh URL http(s) atau data URL base64 gambar (sama dengan portfolios).
+const AVATAR_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+))$/;
+const AVATAR_MAX_LENGTH = 500000;
+
 /** Bangun objek user aman (tanpa password & is_active) untuk dikirim ke client. */
 function toSafeUser(user) {
   const { password: _pw, is_active: _ia, ...rest } = user;
@@ -111,11 +115,16 @@ async function registerStudent(db, payload) {
  */
 async function updateProfile(db, userId, role, payload) {
   const name   = (payload.name || '').trim();
-  const avatar = payload.avatar?.trim() || null;
+  const avatar = payload.avatar ? payload.avatar.trim() : null;
 
-  // Validasi avatar harus http/https jika diisi
-  if (avatar && !/^https?:\/\/.+/.test(avatar)) {
-    return { user: null, error: 'URL foto profil harus diawali http:// atau https://.', statusCode: 400 };
+  // Validasi avatar: boleh URL http(s) atau data URL gambar; kosong -> NULL
+  if (avatar) {
+    if (avatar.length > AVATAR_MAX_LENGTH) {
+      return { user: null, error: 'Ukuran foto profil terlalu besar (maks ~500 KB).', statusCode: 400 };
+    }
+    if (!AVATAR_URL_REGEX.test(avatar)) {
+      return { user: null, error: 'Foto profil harus berupa URL gambar atau file gambar (JPEG/PNG/WebP) yang valid.', statusCode: 400 };
+    }
   }
 
   let class_name = '';

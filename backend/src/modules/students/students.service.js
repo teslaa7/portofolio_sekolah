@@ -14,12 +14,20 @@ const {
 const { isMajorNameValid } = require('../majors/majors.repository');
 
 const URL_REGEX = /^https?:\/\/.+$/;
+const AVATAR_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+))$/;
+const AVATAR_MAX_LENGTH = 500000;
 
-/** Validasi avatar opsional: boleh kosong atau URL http(s). */
+/**
+ * Validasi avatar opsional: boleh kosong, URL http(s), atau data URL base64 gambar.
+ */
 function validateAvatar(value) {
   if (!value || value.trim() === '') return null;
-  if (!URL_REGEX.test(value.trim())) {
-    return { field: 'avatar', message: 'avatar harus berupa URL http/https yang valid atau dikosongkan.' };
+  const v = value.trim();
+  if (v.length > AVATAR_MAX_LENGTH) {
+    return { field: 'avatar', message: 'avatar terlalu besar (maks ~500 KB).' };
+  }
+  if (!AVATAR_URL_REGEX.test(v)) {
+    return { field: 'avatar', message: 'avatar harus berupa URL http/https atau foto (JPEG/PNG/WebP) yang valid.' };
   }
   return null;
 }

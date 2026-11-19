@@ -24,13 +24,18 @@ const registerBody = {
   },
 };
 
+// Menerima string kosong, URL http(s), atau data URL base64 gambar.
+// Sama dengan IMAGE_URL_PATTERN di portfolios.schema.js.
+const AVATAR_PATTERN = '^((https?://.+)|(data:image/(jpeg|png|webp);base64,.+))?$';
+const AVATAR_MAX_LENGTH = 500000; // ~375 KB dalam base64, cukup untuk avatar 256×256
+
 // email / role / is_active tidak diterima dari client (additionalProperties: false)
 const updateProfileBody = {
   type: 'object',
   additionalProperties: false,
   properties: {
     name:       { type: 'string', minLength: 2, maxLength: 150 },
-    avatar:     { type: 'string', maxLength: 500 },
+    avatar:     { type: 'string', maxLength: AVATAR_MAX_LENGTH, pattern: AVATAR_PATTERN },
     class_name: { type: 'string', maxLength: 50 },
     major:      { type: 'string', maxLength: 100 },
   },

@@ -10,6 +10,7 @@ Skema dan data awal untuk MariaDB 10.4+ (XAMPP / phpMyAdmin).
 | `schema.sql` | Struktur tabel (`users`, `categories`, `portfolios`, `reviews`, `majors`). Aman dijalankan berulang (`IF NOT EXISTS`). |
 | `seed.sql` | Data awal untuk development. **Menghapus semua data lama lalu mengisi ulang.** |
 | `migrations/001_majors_and_process_url.sql` | Migrasi untuk database yang sudah ada: tambah tabel `majors`, kolom `process_url`, dan 4 jurusan awal. |
+| `migrations/002_avatar_upload.sql` | Migrasi: perbesar `users.avatar` menjadi `MEDIUMTEXT` agar muat data URL base64 foto profil. |
 
 ## Setup Baru (database kosong)
 
@@ -24,6 +25,13 @@ Cara import di phpMyAdmin: pilih database → tab **Import** → pilih file → 
 Jalankan `migrations/001_majors_and_process_url.sql` di phpMyAdmin:
 1. Pilih database `portofolio_sekolah`.
 2. Tab **Import** → pilih `migrations/001_majors_and_process_url.sql` → **Go**.
+
+### Urutan migrasi (database yang sudah berisi data)
+
+1. `migrations/001_majors_and_process_url.sql` — tabel `majors` + kolom `process_url`.
+2. `migrations/002_avatar_upload.sql` — `users.avatar` menjadi `MEDIUMTEXT` (mendukung upload foto profil base64).
+
+Kedua migrasi idempotent — aman dijalankan berulang. Jalankan via tab **Import** di phpMyAdmin pada database `portofolio_sekolah`.
 
 Migrasi ini bersifat idempotent — aman dijalankan lebih dari sekali. Setelah migrasi:
 - Tabel `majors` terisi 4 jurusan.
