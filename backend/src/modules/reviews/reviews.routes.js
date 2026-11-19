@@ -10,11 +10,15 @@ const {
   latestReviewsHandler,
   myReviewsHandler,
   communityReviewsHandler,
+  allReviewsHandler,
 } = require('./reviews.controller');
 const { createReviewBody } = require('./reviews.schema');
 
 module.exports = async function reviewRoutes(app) {
-  // ── Rute statis autentikasi (daftarkan SEBELUM route berparameter) ─────────
+  // ── Rute statis (daftarkan SEBELUM route berparameter) ────────────────────
+
+  // GET /api/reviews  (admin: semua ulasan)
+  app.get('/reviews', { preHandler: requireAdmin }, allReviewsHandler);
 
   // GET /api/reviews/latest  (publik)
   app.get('/reviews/latest', latestReviewsHandler);

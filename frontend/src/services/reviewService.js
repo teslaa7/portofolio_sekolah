@@ -35,6 +35,14 @@ export const reviewService = {
   async getCommunityReviews({ page = 1, limit = 10 } = {}) {
     return apiClient.get(`/reviews/community?page=${page}&limit=${limit}`);
   },
+
+  /** Semua ulasan (hanya admin), dengan search + filter rating. */
+  async getAllReviews({ page = 1, limit = 20, search = '', rating = '' } = {}) {
+    const params = new URLSearchParams({ page, limit });
+    if (search) params.set('search', search);
+    if (rating) params.set('rating', rating);
+    return apiClient.get(`/reviews?${params.toString()}`);
+  },
 };
 
 export default reviewService;

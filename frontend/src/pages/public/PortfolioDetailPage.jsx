@@ -5,14 +5,12 @@ import {
   ExternalLink,
   Github,
   FolderOpen,
-  Calendar,
   User,
-  GraduationCap,
-  Layers,
   Star,
   CheckCircle2,
   Share2,
   MessageSquare,
+  Film,
 } from 'lucide-react';
 import { portfolioService } from '../../services/portfolioService.js';
 import { categoryService } from '../../services/categoryService.js';
@@ -27,6 +25,7 @@ import { ReviewList } from '../../components/reviews/ReviewList.jsx';
 import { formatDate } from '../../utils/formatDate.js';
 import { useToast } from '../../hooks/useToast.jsx';
 import { useAuth } from '../../hooks/useAuth.jsx';
+import { isVideoSrc, getMediaSrc } from '../../utils/imageFile.js';
 
 export function PortfolioDetailPage() {
   const { slug } = useParams();
@@ -183,14 +182,24 @@ export function PortfolioDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Media Showcase */}
           <div className="lg:col-span-7 space-y-4">
-            {/* Active Big Image */}
+            {/* Area media utama */}
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-slate-200/90 shadow-md bg-slate-900 flex items-center justify-center">
-              <img
-                src={activeImage || portfolio.thumbnail_url}
-                alt={portfolio.title}
-                className="w-full h-full object-cover transition-all duration-300"
-              />
-              {portfolio.is_featured && (
+              {isVideoSrc(activeImage) ? (
+                <video
+                  key={activeImage}
+                  src={getMediaSrc(activeImage)}
+                  controls
+                  className="w-full h-full object-contain"
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={activeImage || portfolio.thumbnail_url}
+                  alt={portfolio.title}
+                  className="w-full h-full object-cover transition-all duration-300"
+                />
+              )}
+              {portfolio.is_featured && !isVideoSrc(activeImage) && (
                 <div className="absolute top-4 left-4">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#F2B705] text-[#0B2E6B] shadow-md">
                     <Star className="w-4 h-4 fill-[#0B2E6B]" />
@@ -200,23 +209,39 @@ export function PortfolioDetailPage() {
               )}
             </div>
 
-            {/* Thumbnail list */}
+            {/* Strip thumbnail/video — tampil bila lebih dari 1 item */}
             {allScreenshots.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {allScreenshots.map((imgUrl, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveImage(imgUrl)}
-                    className={`relative w-24 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
-                      activeImage === imgUrl
-                        ? 'border-[#0B2E6B] ring-2 ring-blue-200 scale-102'
-                        : 'border-slate-200 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+                {allScreenshots.map((mediaSrc, idx) => {
+                  const isVid = isVideoSrc(mediaSrc);
+                  const src   = getMediaSrc(mediaSrc);
+                  const isActive = activeImage === mediaSrc;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveImage(mediaSrc)}
+                      className={`relative w-24 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all bg-slate-900 ${
+                        isActive
+                          ? 'border-[#0B2E6B] ring-2 ring-blue-200 scale-102'
+                          : 'border-slate-200 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      {isVid ? (
+                        <>
+                          <video src={src} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-black/50 rounded-full p-1">
+                              <Film className="w-3.5 h-3.5 text-white" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <img src={mediaSrc} alt={`Media ${idx + 1}`} className="w-full h-full object-cover" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -328,7 +353,7 @@ export function PortfolioDetailPage() {
                       icon={FolderOpen}
                       iconPosition="left"
                     >
-                      Proses Pembuatan Website
+                      Dokumentasi
                     </Button>
                   </a>
                 )}

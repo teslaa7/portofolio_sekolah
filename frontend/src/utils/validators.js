@@ -71,8 +71,16 @@ export function validatePortfolioForm(formData) {
     errors.process_url = 'Link harus berupa tautan Google Drive (drive.google.com / docs.google.com).';
   }
 
-  if (formData.thumbnail_url && !isValidUrl(formData.thumbnail_url) && !formData.thumbnail_url.startsWith('data:image/')) {
-    errors.thumbnail_url = 'URL thumbnail harus berupa URL gambar yang valid';
+  if (formData.thumbnail_url) {
+    const t = formData.thumbnail_url;
+    const isOk =
+      isValidUrl(t) ||
+      t.startsWith('data:image/') ||
+      t.startsWith('data:video/') ||
+      t.startsWith('video:');   // object URL sementara dari fileToVideoObjectUrl
+    if (!isOk) {
+      errors.thumbnail_url = 'Thumbnail harus berupa file gambar atau video yang valid';
+    }
   }
 
   return {

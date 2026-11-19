@@ -168,3 +168,26 @@ async function getCommunityReviews(db, userId, params) {
 
 // Tambahkan ke module.exports yang sudah ada
 Object.assign(module.exports, { getMyReviews, getCommunityReviews });
+
+// ── Semua ulasan untuk panel admin ───────────────────────────────────────────
+const { findAllReviewsAdmin } = require('./reviews.repository');
+
+async function getAllReviews(db, params) {
+  const { page, limit, offset } = getPagination(params.page, params.limit);
+  const safeLimit = Math.min(limit, 100);
+
+  const { rows, total } = await findAllReviewsAdmin(db, {
+    search: params.search || '',
+    rating: params.rating || null,
+    page,
+    limit: safeLimit,
+    offset,
+  });
+
+  return {
+    data: rows,
+    meta: { page, limit: safeLimit, total, totalPages: getTotalPages(total, safeLimit) },
+  };
+}
+
+Object.assign(module.exports, { getAllReviews });

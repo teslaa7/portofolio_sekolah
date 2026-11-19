@@ -2,10 +2,17 @@
 
 const currentYear = new Date().getFullYear();
 
-// Menerima URL http(s) ATAU data URL base64 (jpeg/png/webp), atau string kosong.
-// ~1.500.000 karakter cukup untuk gambar base64 hingga sekitar 1 MB.
-const IMAGE_URL_PATTERN = '^((https?://.+)|(data:image/(jpeg|png|webp);base64,.+))?$';
-const MAX_IMAGE_LENGTH = 1500000;
+// Menerima:
+//   - string kosong (thumbnail opsional)
+//   - URL http/https
+//   - data URL base64 gambar (jpeg/png/webp)
+//   - data URL base64 video (mp4/webm/ogg)
+//   - object URL sementara dari browser dengan prefix "video:" (dari fileToVideoObjectUrl)
+const MEDIA_URL_PATTERN = '^((https?://.+)|(data:image/(jpeg|png|webp);base64,.+)|(data:video/(mp4|webm|ogg);base64,.+)|(video:.+))?$';
+
+// Video bisa mencapai 50 MB → ~67 MB dalam base64. Naikkan batas ke 70 MB untuk akomodasi.
+// Namun untuk menjaga performa, disarankan murid menggunakan video ringkas.
+const MAX_MEDIA_LENGTH = 70_000_000; // ~67 MB base64 untuk video 50 MB
 
 // Field yang sama dipakai di POST dan PUT (PUT buat semua optional)
 const portfolioProperties = {
@@ -25,10 +32,10 @@ const portfolioProperties = {
   project_url:  { type: 'string', maxLength: 500 },
   repo_url:     { type: 'string', maxLength: 500 },
   process_url:  { type: 'string', maxLength: 500 },
-  thumbnail_url: { type: 'string', maxLength: MAX_IMAGE_LENGTH, pattern: IMAGE_URL_PATTERN },
+  thumbnail_url: { type: 'string', maxLength: MAX_MEDIA_LENGTH, pattern: MEDIA_URL_PATTERN },
   screenshots: {
     type: 'array',
-    items: { type: 'string', maxLength: MAX_IMAGE_LENGTH, pattern: IMAGE_URL_PATTERN },
+    items: { type: 'string', maxLength: MAX_MEDIA_LENGTH, pattern: MEDIA_URL_PATTERN },
     maxItems: 6,
   },
   year: { type: 'integer', minimum: 2000, maximum: currentYear + 1 },

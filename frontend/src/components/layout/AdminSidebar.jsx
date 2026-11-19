@@ -47,6 +47,7 @@ export function AdminSidebar({ isOpen, onClose }) {
     { label: 'Kelola Kategori', path: '/admin/kategori', icon: Tags, end: false },
     { label: 'Kelola Jurusan', path: '/admin/jurusan', icon: Layers, end: false },
     { label: 'Kelola Murid', path: '/admin/murid', icon: Users, end: false },
+    { label: 'Kelola Ulasan', path: '/admin/ulasan-admin', icon: MessageSquare, end: false },
     { label: 'Edit Profil', path: '/admin/profil', icon: UserCog, end: true },
   ];
 
@@ -90,7 +91,7 @@ export function AdminSidebar({ isOpen, onClose }) {
             </div>
             <div>
               <span className="font-heading font-extrabold text-base tracking-tight block">
-                Portofolio<span className="text-[#F2B705]">Sekolah</span>
+                Portofolio<span className="text-[#F2B705]">Siswa</span>
               </span>
               <span className="text-[10px] text-blue-200/80 uppercase font-semibold tracking-wider">
                 {panelLabel}

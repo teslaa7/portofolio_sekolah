@@ -20,9 +20,9 @@ const URL_REGEX = /^https?:\/\/.+/;
 // Google Drive URL validator
 const DRIVE_REGEX = /^https:\/\/(drive|docs)\.google\.com\/.+/;
 
-// Data URL base64 untuk gambar
-const IMAGE_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+))$/;
-const MAX_IMAGE_LENGTH = 1500000;
+// Media: gambar ATAU video (data URL base64 atau object URL "video:...")
+const MEDIA_URL_REGEX = /^((https?:\/\/.+)|(data:image\/(jpeg|png|webp);base64,.+)|(data:video\/(mp4|webm|ogg);base64,.+)|(video:.+))$/;
+const MAX_MEDIA_LENGTH = 70_000_000; // ~70 MB — cukup untuk video 50 MB yang diencode base64
 
 function validateUrl(value, fieldName) {
   if (!value || value.trim() === '') return null;
@@ -41,17 +41,17 @@ function validateProcessUrl(value) {
 }
 
 /**
- * Validasi gambar (thumbnail / screenshot): boleh URL http(s) atau data URL base64
- * (jpeg/png/webp). Boleh kosong. Maks ~1.500.000 karakter per gambar.
+ * Validasi media (thumbnail / screenshot): boleh URL http(s), data URL gambar/video,
+ * atau object URL sementara "video:...". Boleh kosong.
  */
 function validateImage(value, fieldName) {
   if (!value || value.trim() === '') return null;
   const v = value.trim();
-  if (v.length > MAX_IMAGE_LENGTH) {
-    return { field: fieldName, message: `${fieldName} terlalu besar (maks ${MAX_IMAGE_LENGTH} karakter).` };
+  if (v.length > MAX_MEDIA_LENGTH) {
+    return { field: fieldName, message: `${fieldName} terlalu besar. Kompres video sebelum mengunggah.` };
   }
-  if (!IMAGE_URL_REGEX.test(v)) {
-    return { field: fieldName, message: `${fieldName} harus berupa URL http/https atau data URL base64 (jpeg/png/webp).` };
+  if (!MEDIA_URL_REGEX.test(v)) {
+    return { field: fieldName, message: `${fieldName} harus berupa URL atau file gambar/video yang valid.` };
   }
   return null;
 }

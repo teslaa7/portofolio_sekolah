@@ -26,10 +26,10 @@ export function Navbar() {
             </div>
             <div>
               <span className="font-heading font-extrabold text-lg sm:text-xl text-[#0B2E6B] tracking-tight block leading-tight">
-                Portofolio<span className="text-[#F2B705]">Sekolah</span>
+                Portofolio<span className="text-[#F2B705]">Siswa</span>
               </span>
               <span className="text-[11px] text-slate-500 font-medium tracking-wide uppercase block">
-                Galeri Karya Siswa
+                Sejuta Karya Siswa
               </span>
             </div>
           </Link>

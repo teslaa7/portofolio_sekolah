@@ -301,3 +301,58 @@ Object.assign(module.exports, {
   findCommunityReviews,
   countCommunityReviews,
 });
+
+/**
+ * Ambil semua ulasan untuk panel admin dengan search, filter rating, paginasi.
+ * JOIN portfolios untuk title & slug, urut terbaru.
+ */
+async function findAllReviewsAdmin(db, { search, rating, page, limit, offset }) {
+  const conditions = [];
+  const values = [];
+
+  if (search && search.trim()) {
+    const q = `%${search.trim()}%`;
+    conditions.push('(r.name LIKE ? OR r.comment LIKE ? OR p.title LIKE ?)');
+    values.push(q, q, q);
+  }
+
+  if (rating) {
+    conditions.push('r.rating = ?');
+    values.push(Number(rating));
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     ${where}`,
+    values
+  );
+  const total = Number(countRows[0].total);
+
+  const [rows] = await db.query(
+    `SELECT r.id, r.portfolio_id, r.name, r.rating, r.comment,
+            r.created_at, r.updated_at,
+            p.title AS portfolio_title,
+            p.slug  AS portfolio_slug
+     FROM reviews r
+     INNER JOIN portfolios p ON r.portfolio_id = p.id
+     ${where}
+     ORDER BY r.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...values, limit, offset]
+  );
+
+  return {
+    rows: rows.map((row) => ({
+      ...mapReview(row),
+      portfolio_title: row.portfolio_title,
+      portfolio_slug:  row.portfolio_slug,
+    })),
+    total,
+  };
+}
+
+Object.assign(module.exports, { findAllReviewsAdmin });

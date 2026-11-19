@@ -22,7 +22,7 @@ async function buildApp() {
 
   const app = Fastify({
     logger: loggerOpts,
-    bodyLimit: 10 * 1024 * 1024, // 10 MB (mendukung gambar base64)
+    bodyLimit: 75 * 1024 * 1024, // 75 MB — cukup untuk video 50 MB yang diencode base64 (~67 MB)
   });
 
   // Simpan referensi untuk graceful shutdown

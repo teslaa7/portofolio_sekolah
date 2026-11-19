@@ -46,7 +46,7 @@ export function AboutPage() {
             <span>Pusat Unggulan Vokasi Indonesia</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold font-heading text-white">
-            Tentang Website Portofolio Sekolah
+            Tentang Website Portofolio Siswa
           </h1>
           <p className="text-base sm:text-lg text-blue-100/90 leading-relaxed max-w-2xl mx-auto">
             Etalase digital terintegrasi yang menghadirkan pencapaian, inovasi teknologi, dan portofolio proyek karya siswa berstandar industri.

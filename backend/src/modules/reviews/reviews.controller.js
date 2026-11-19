@@ -114,3 +114,19 @@ async function communityReviewsHandler(req, reply) {
 }
 
 Object.assign(module.exports, { myReviewsHandler, communityReviewsHandler });
+
+// ── Semua ulasan untuk admin ──────────────────────────────────────────────────
+const { getAllReviews } = require('./reviews.service');
+
+// GET /api/reviews?page=&limit=&search=&rating=
+async function allReviewsHandler(req, reply) {
+  const { page = 1, limit = 20, search = '', rating = '' } = req.query;
+  const result = await getAllReviews(req.server.db, { page, limit, search, rating });
+  return successResponse(reply, {
+    message: 'Semua ulasan berhasil diambil.',
+    data: result.data,
+    meta: result.meta,
+  });
+}
+
+Object.assign(module.exports, { allReviewsHandler });

@@ -14,7 +14,7 @@ export function Footer() {
                 <GraduationCap className="w-6 h-6 text-[#0B2E6B]" />
               </div>
               <span className="font-heading font-extrabold text-xl text-white tracking-tight">
-                Portofolio<span className="text-[#F2B705]">Sekolah</span>
+                Portofolio<span className="text-[#F2B705]">Siswa</span>
               </span>
             </div>
             <p className="text-sm text-blue-100/80 leading-relaxed">
@@ -60,15 +60,15 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-blue-100/80">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#F2B705] shrink-0 mt-0.5" />
-                <span>Jl. Barokah No. 06 Desa Wanaherang Kec. Gunungputri Kab. Bogor, Kec. Gunungputri, Kab. Bogor, Prov. Jawa Barat.</span>
+                <span>-</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#F2B705] shrink-0" />
-                <span>(021) 8673310</span>
+                <span>-</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#F2B705] shrink-0" />
-                <span>smkn1gnp@smkn1gnputri.sch.id</span>
+                <span>-</span>
               </li>
             </ul>
           </div>

@@ -5,6 +5,7 @@ import {
   X,
   Plus,
   Image as ImageIcon,
+  Video,
   ExternalLink,
   Github,
   FolderOpen,
@@ -12,6 +13,7 @@ import {
   Upload,
   Trash2,
   RefreshCw,
+  Film,
 } from 'lucide-react';
 import { Input } from '../common/Input.jsx';
 import { Select } from '../common/Select.jsx';
@@ -19,12 +21,61 @@ import { Button } from '../common/Button.jsx';
 import { useMajors } from '../../hooks/useMajors.js';
 import { validatePortfolioForm } from '../../utils/validators.js';
 import {
-  validateImageFile,
+  validateMediaFile,
   fileToOptimizedDataUrl,
-  IMAGE_ACCEPT,
+  fileToVideoObjectUrl,
+  isVideoSrc,
+  getMediaSrc,
+  MEDIA_ACCEPT,
+  MAX_FILE_SIZE_MB,
+  MAX_VIDEO_SIZE_MB,
 } from '../../utils/imageFile.js';
 
 const MAX_SCREENSHOTS = 6;
+
+/** Komponen preview satu item media (gambar atau video) di galeri. */
+function MediaPreview({ src, label, onRemove, className = '' }) {
+  const isVideo = isVideoSrc(src);
+  const actualSrc = getMediaSrc(src);
+  return (
+    <div className={`relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-900 ${className}`}>
+      {isVideo ? (
+        <>
+          <video
+            src={actualSrc}
+            className="w-full h-full object-cover"
+            muted
+            playsInline
+            preload="metadata"
+          />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-black/50 rounded-full p-2">
+              <Film className="w-5 h-5 text-white" />
+            </div>
+          </div>
+        </>
+      ) : (
+        <img
+          src={src}
+          alt={label}
+          className="w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.src = 'https://picsum.photos/800/500?grayscale'; }}
+        />
+      )}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-md opacity-90 hover:opacity-100 transition-opacity shadow-xs"
+          title="Hapus media ini"
+          aria-label={`Hapus ${label}`}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function PortfolioForm({
   initialData = {},
@@ -59,148 +110,128 @@ export function PortfolioForm({
 
   const [errors, setErrors] = useState({});
   const [techInput, setTechInput] = useState('');
-  // Ref untuk input file tersembunyi
   const thumbnailInputRef = useRef(null);
   const screenshotInputRef = useRef(null);
-  // State error upload gambar (terpisah dari form errors)
-  const [imageErrors, setImageErrors] = useState({ thumbnail: null, screenshot: null });
+  const [mediaErrors, setMediaErrors] = useState({ thumbnail: null, screenshot: null });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-    // Clear field error on change
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
-  // Tech stack tag management
+  // ── Tech Stack ──────────────────────────────────────────────────────────
   const handleAddTech = (e) => {
     e?.preventDefault();
     const tag = techInput.trim();
     if (tag && !formData.tech_stack.includes(tag)) {
-      setFormData((prev) => ({
-        ...prev,
-        tech_stack: [...prev.tech_stack, tag],
-      }));
+      setFormData((prev) => ({ ...prev, tech_stack: [...prev.tech_stack, tag] }));
       setTechInput('');
     }
   };
 
-  const handleRemoveTech = (indexToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      tech_stack: prev.tech_stack.filter((_, i) => i !== indexToRemove),
-    }));
+  const handleRemoveTech = (i) => {
+    setFormData((prev) => ({ ...prev, tech_stack: prev.tech_stack.filter((_, idx) => idx !== i) }));
   };
 
-  // Screenshot file upload management
-  const handleScreenshotFileChange = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-
-    // Reset input agar file yang sama bisa dipilih ulang
-    e.target.value = '';
-
-    // Batasi maksimal 6 screenshot total
-    const available = MAX_SCREENSHOTS - formData.screenshots.length;
-    if (available <= 0) {
-      setImageErrors((prev) => ({ ...prev, screenshot: `Maksimal ${MAX_SCREENSHOTS} screenshot.` }));
-      return;
-    }
-    const filesToProcess = files.slice(0, available);
-
-    const newUrls = [];
-    let firstError = null;
-
-    for (const file of filesToProcess) {
-      const { valid, error } = validateImageFile(file);
-      if (!valid) {
-        firstError = error;
-        continue;
-      }
-      try {
-        const dataUrl = await fileToOptimizedDataUrl(file, 1280);
-        newUrls.push(dataUrl);
-      } catch (err) {
-        firstError = err.message || 'Gagal memproses gambar. Coba file lain.';
-      }
-    }
-
-    if (newUrls.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        screenshots: [...prev.screenshots, ...newUrls],
-      }));
-    }
-
-    if (firstError) {
-      setImageErrors((prev) => ({ ...prev, screenshot: firstError }));
-    } else if (files.length > available) {
-      setImageErrors((prev) => ({ ...prev, screenshot: `Maksimal ${MAX_SCREENSHOTS} screenshot.` }));
-    } else {
-      setImageErrors((prev) => ({ ...prev, screenshot: null }));
-    }
-  };
-
-  const handleRemoveScreenshot = (indexToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      screenshots: prev.screenshots.filter((_, i) => i !== indexToRemove),
-    }));
-  };
-
-  // Thumbnail file upload handler
+  // ── Thumbnail ───────────────────────────────────────────────────────────
   const handleThumbnailFileChange = async (e) => {
     const file = e.target.files?.[0];
-    // Reset input agar file yang sama bisa dipilih ulang
     e.target.value = '';
     if (!file) return;
 
-    const { valid, error } = validateImageFile(file);
+    const { valid, error, isVideo } = validateMediaFile(file);
     if (!valid) {
-      setImageErrors((prev) => ({ ...prev, thumbnail: error }));
+      setMediaErrors((prev) => ({ ...prev, thumbnail: error }));
       return;
     }
 
     try {
-      const dataUrl = await fileToOptimizedDataUrl(file, 800);
-      setFormData((prev) => ({ ...prev, thumbnail_url: dataUrl }));
-      setImageErrors((prev) => ({ ...prev, thumbnail: null }));
-      if (errors.thumbnail_url) {
-        setErrors((prev) => ({ ...prev, thumbnail_url: null }));
+      let src;
+      if (isVideo) {
+        src = fileToVideoObjectUrl(file);
+      } else {
+        src = await fileToOptimizedDataUrl(file, 800);
       }
+      setFormData((prev) => ({ ...prev, thumbnail_url: src }));
+      setMediaErrors((prev) => ({ ...prev, thumbnail: null }));
+      if (errors.thumbnail_url) setErrors((prev) => ({ ...prev, thumbnail_url: null }));
     } catch (err) {
-      setImageErrors((prev) => ({ ...prev, thumbnail: err.message || 'Gagal memproses gambar. Coba file lain.' }));
+      setMediaErrors((prev) => ({ ...prev, thumbnail: err.message || 'Gagal memproses file.' }));
     }
   };
 
   const handleRemoveThumbnail = () => {
     setFormData((prev) => ({ ...prev, thumbnail_url: '' }));
-    setImageErrors((prev) => ({ ...prev, thumbnail: null }));
+    setMediaErrors((prev) => ({ ...prev, thumbnail: null }));
   };
 
+  // ── Screenshots/Galeri ──────────────────────────────────────────────────
+  const handleScreenshotFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+
+    const available = MAX_SCREENSHOTS - formData.screenshots.length;
+    if (available <= 0) {
+      setMediaErrors((prev) => ({ ...prev, screenshot: `Maksimal ${MAX_SCREENSHOTS} item.` }));
+      return;
+    }
+    const toProcess = files.slice(0, available);
+
+    const newItems = [];
+    let firstError = null;
+
+    for (const file of toProcess) {
+      const { valid, error, isVideo } = validateMediaFile(file);
+      if (!valid) { firstError = error; continue; }
+      try {
+        if (isVideo) {
+          newItems.push(fileToVideoObjectUrl(file));
+        } else {
+          newItems.push(await fileToOptimizedDataUrl(file, 1280));
+        }
+      } catch (err) {
+        firstError = err.message || 'Gagal memproses file.';
+      }
+    }
+
+    if (newItems.length > 0) {
+      setFormData((prev) => ({ ...prev, screenshots: [...prev.screenshots, ...newItems] }));
+    }
+
+    if (firstError) {
+      setMediaErrors((prev) => ({ ...prev, screenshot: firstError }));
+    } else if (files.length > available) {
+      setMediaErrors((prev) => ({ ...prev, screenshot: `Maksimal ${MAX_SCREENSHOTS} item.` }));
+    } else {
+      setMediaErrors((prev) => ({ ...prev, screenshot: null }));
+    }
+  };
+
+  const handleRemoveScreenshot = (i) => {
+    setFormData((prev) => ({ ...prev, screenshots: prev.screenshots.filter((_, idx) => idx !== i) }));
+  };
+
+  // ── Submit ──────────────────────────────────────────────────────────────
   const handleSubmit = (e) => {
     e.preventDefault();
     const validation = validatePortfolioForm(formData);
     if (!validation.isValid) {
       setErrors(validation.errors);
-      // Scroll to top of form
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     onSubmit(formData);
   };
 
-  const majorOptions = majorNames.map((m) => ({ value: m, label: m }));
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+  const majorOptions     = majorNames.map((m) => ({ value: m, label: m }));
+  const categoryOptions  = categories.map((c) => ({ value: c.id, label: c.name }));
+  const thumbnailIsVideo = isVideoSrc(formData.thumbnail_url);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Kartu 1: Informasi Dasar */}
+      {/* ── Kartu 1: Informasi Dasar ─────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
         <div className="border-b border-slate-100 pb-4">
           <h2 className="text-lg font-bold text-[#0F172A] font-heading">Informasi Utama Karya</h2>
@@ -292,14 +323,8 @@ export function PortfolioForm({
             <label className="block text-sm font-medium text-slate-700">
               Deskripsi Singkat (Ringkasan Kartu) <span className="text-red-500">*</span>
             </label>
-            <span
-              className={`text-xs ${
-                formData.short_description.length > 150
-                  ? 'text-red-600 font-bold'
-                  : 'text-slate-400'
-              }`}
-            >
-              {formData.short_description.length} / 150 karakter
+            <span className={`text-xs ${formData.short_description.length > 150 ? 'text-red-600 font-bold' : 'text-slate-400'}`}>
+              {formData.short_description.length} / 150
             </span>
           </div>
           <textarea
@@ -310,14 +335,10 @@ export function PortfolioForm({
             maxLength={180}
             placeholder="Ringkasan 1-2 kalimat untuk ditampilkan di kartu portofolio..."
             className={`block w-full rounded-xl border bg-white p-3 text-sm text-[#0F172A] placeholder-slate-400 transition-colors focus:outline-none focus:ring-2 ${
-              errors.short_description
-                ? 'border-red-400 focus:ring-red-200'
-                : 'border-slate-300 focus:border-[#0B2E6B] focus:ring-blue-100 hover:border-slate-400'
+              errors.short_description ? 'border-red-400 focus:ring-red-200' : 'border-slate-300 focus:border-[#0B2E6B] focus:ring-blue-100 hover:border-slate-400'
             }`}
           />
-          {errors.short_description && (
-            <p className="mt-1.5 text-xs text-[#DC2626] font-medium">{errors.short_description}</p>
-          )}
+          {errors.short_description && <p className="mt-1.5 text-xs text-[#DC2626] font-medium">{errors.short_description}</p>}
         </div>
 
         {/* Full Description */}
@@ -332,17 +353,13 @@ export function PortfolioForm({
             onChange={handleChange}
             placeholder="Jelaskan fitur utama, latar belakang pembuatan, solusi yang diberikan, dan tantangan yang diselesaikan..."
             className={`block w-full rounded-xl border bg-white p-3 text-sm text-[#0F172A] placeholder-slate-400 transition-colors focus:outline-none focus:ring-2 ${
-              errors.description
-                ? 'border-red-400 focus:ring-red-200'
-                : 'border-slate-300 focus:border-[#0B2E6B] focus:ring-blue-100 hover:border-slate-400'
+              errors.description ? 'border-red-400 focus:ring-red-200' : 'border-slate-300 focus:border-[#0B2E6B] focus:ring-blue-100 hover:border-slate-400'
             }`}
           />
-          {errors.description && (
-            <p className="mt-1.5 text-xs text-[#DC2626] font-medium">{errors.description}</p>
-          )}
+          {errors.description && <p className="mt-1.5 text-xs text-[#DC2626] font-medium">{errors.description}</p>}
         </div>
 
-        {/* Is Featured Checkbox — hanya admin */}
+        {/* Featured — hanya admin */}
         {!isStudent && (
           <div className="pt-2">
             <label className="inline-flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl bg-amber-50/60 border border-amber-200/80 hover:bg-amber-50 transition-colors">
@@ -367,7 +384,7 @@ export function PortfolioForm({
         )}
       </div>
 
-      {/* Kartu 2: Tech Stack & Tautan Proyek */}
+      {/* ── Kartu 2: Tech Stack & Tautan ─────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
         <div className="border-b border-slate-100 pb-4">
           <h2 className="text-lg font-bold text-[#0F172A] font-heading">Teknologi & Tautan Proyek</h2>
@@ -376,7 +393,7 @@ export function PortfolioForm({
           </p>
         </div>
 
-        {/* Tech Stack Tags Input */}
+        {/* Tech Stack */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Tech Stack / Alat yang Digunakan
@@ -386,45 +403,26 @@ export function PortfolioForm({
               type="text"
               value={techInput}
               onChange={(e) => setTechInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddTech();
-                }
-              }}
-              placeholder="Ketik teknologi (contoh: React, Fastify, Figma) lalu tekan Enter..."
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTech(); } }}
+              placeholder="Ketik teknologi lalu tekan Enter..."
               className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-[#0F172A] focus:border-[#0B2E6B] focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
-            <Button type="button" variant="outline" size="sm" onClick={handleAddTech} icon={Plus}>
-              Tambah
-            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={handleAddTech} icon={Plus}>Tambah</Button>
           </div>
-
-          {/* Tag Badges */}
           <div className="flex flex-wrap gap-2 mt-3 min-h-8">
-            {formData.tech_stack.map((tech, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-[#0B2E6B] border border-blue-200"
-              >
-                <span>{tech}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTech(index)}
-                  className="hover:text-red-600 transition-colors"
-                  aria-label={`Hapus tag ${tech}`}
-                >
+            {formData.tech_stack.map((tech, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-[#0B2E6B] border border-blue-200">
+                {tech}
+                <button type="button" onClick={() => handleRemoveTech(i)} className="hover:text-red-600 transition-colors" aria-label={`Hapus ${tech}`}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </span>
             ))}
-            {formData.tech_stack.length === 0 && (
-              <span className="text-xs text-slate-400 italic">Belum ada teknologi ditambahkan</span>
-            )}
+            {formData.tech_stack.length === 0 && <span className="text-xs text-slate-400 italic">Belum ada teknologi ditambahkan</span>}
           </div>
         </div>
 
-        {/* Project URLs */}
+        {/* URLs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             label="URL Website / Demo Proyek"
@@ -436,7 +434,6 @@ export function PortfolioForm({
             error={errors.project_url}
             helperText="Link langsung ke website yang sudah dideploy."
           />
-
           <Input
             label="URL Repository GitHub (Opsional)"
             name="repo_url"
@@ -447,8 +444,6 @@ export function PortfolioForm({
             error={errors.repo_url}
             helperText="Kode sumber di GitHub atau GitLab."
           />
-
-          {/* Link Google Drive Proses Pembuatan — opsional, semua role */}
           <Input
             label="Link Google Drive Proses Pembuatan (Opsional)"
             name="process_url"
@@ -463,86 +458,96 @@ export function PortfolioForm({
         </div>
       </div>
 
-      {/* Kartu 3: Media & Gambar */}
+      {/* ── Kartu 3: Media ───────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
         <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-[#0F172A] font-heading">Gambar & Tangkapan Layar</h2>
+          <h2 className="text-lg font-bold text-[#0F172A] font-heading">Gambar & Video</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Upload gambar dari komputer. Format JPG, PNG, atau WebP — maks {5} MB per file.
+            Upload gambar <strong>(JPG, PNG, WebP — maks {MAX_FILE_SIZE_MB} MB)</strong> atau video
+            <strong> (MP4, WebM, OGG — maks {MAX_VIDEO_SIZE_MB} MB)</strong> dari komputer.
           </p>
         </div>
 
-        {/* ── Thumbnail Upload ── */}
+        {/* ── Thumbnail ── */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Gambar Thumbnail Utama
+            Thumbnail Utama
+            <span className="ml-2 text-[11px] font-normal text-slate-400">Gambar atau Video</span>
           </label>
 
-          {/* Input file tersembunyi */}
           <input
             ref={thumbnailInputRef}
             type="file"
-            accept={IMAGE_ACCEPT}
+            accept={MEDIA_ACCEPT}
             className="hidden"
             onChange={handleThumbnailFileChange}
-            aria-label="Upload gambar thumbnail"
+            aria-label="Upload thumbnail"
           />
 
           {formData.thumbnail_url ? (
-            /* ── Preview thumbnail ── */
             <div className="flex items-start gap-4">
-              <div className="w-48 h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-xs shrink-0">
-                <img
-                  src={formData.thumbnail_url}
-                  alt="Preview Thumbnail"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://picsum.photos/600/400?grayscale';
-                  }}
-                />
+              {/* Preview */}
+              <div className="w-48 h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-xs shrink-0 relative">
+                {thumbnailIsVideo ? (
+                  <>
+                    <video
+                      src={getMediaSrc(formData.thumbnail_url)}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-black/50 rounded-full p-2">
+                        <Film className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <img
+                    src={formData.thumbnail_url}
+                    alt="Preview Thumbnail"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.currentTarget.src = 'https://picsum.photos/600/400?grayscale'; }}
+                  />
+                )}
               </div>
               <div className="flex flex-col gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  icon={RefreshCw}
-                  onClick={() => thumbnailInputRef.current?.click()}
-                >
-                  Ganti Gambar
+                <p className="text-xs text-slate-500 font-medium">
+                  {thumbnailIsVideo ? '🎬 Video' : '🖼️ Gambar'} terpasang
+                </p>
+                <Button type="button" variant="outline" size="sm" icon={RefreshCw} onClick={() => thumbnailInputRef.current?.click()}>
+                  Ganti
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  icon={Trash2}
-                  onClick={handleRemoveThumbnail}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
+                <Button type="button" variant="ghost" size="sm" icon={Trash2} onClick={handleRemoveThumbnail} className="text-red-500 hover:text-red-700 hover:bg-red-50">
                   Hapus
                 </Button>
               </div>
             </div>
           ) : (
-            /* ── Dropzone / area klik ── */
             <button
               type="button"
               onClick={() => thumbnailInputRef.current?.click()}
               className={`w-full flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-xl border-2 border-dashed transition-colors ${
-                imageErrors.thumbnail
+                mediaErrors.thumbnail
                   ? 'border-red-300 bg-red-50 hover:bg-red-100'
                   : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-[#0B2E6B]'
               }`}
-              aria-label="Klik untuk memilih gambar thumbnail"
+              aria-label="Klik untuk memilih thumbnail"
             >
-              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-xs">
-                <ImageIcon className="w-5 h-5 text-slate-400" />
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-xs">
+                  <ImageIcon className="w-5 h-5 text-slate-400" />
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-xs">
+                  <Video className="w-5 h-5 text-slate-400" />
+                </div>
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-slate-700">
-                  Klik untuk pilih gambar
+                <p className="text-sm font-medium text-slate-700">Klik untuk pilih gambar atau video</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Gambar: JPG, PNG, WebP — maks {MAX_FILE_SIZE_MB} MB &nbsp;·&nbsp; Video: MP4, WebM — maks {MAX_VIDEO_SIZE_MB} MB
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">JPG, PNG, WebP — maks 5 MB</p>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-[#0B2E6B] font-semibold">
                 <Upload className="w-3.5 h-3.5" />
@@ -551,33 +556,28 @@ export function PortfolioForm({
             </button>
           )}
 
-          {/* Error upload thumbnail */}
-          {imageErrors.thumbnail && (
-            <p className="mt-1.5 text-xs text-red-600 font-medium">{imageErrors.thumbnail}</p>
-          )}
-          {errors.thumbnail_url && (
-            <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.thumbnail_url}</p>
-          )}
+          {mediaErrors.thumbnail && <p className="mt-1.5 text-xs text-red-600 font-medium">{mediaErrors.thumbnail}</p>}
+          {errors.thumbnail_url && <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.thumbnail_url}</p>}
           <p className="mt-1.5 text-xs text-slate-400">
             Kosongkan jika ingin sistem membuat placeholder otomatis dari slug judul.
           </p>
         </div>
 
-        {/* ── Screenshot Upload ── */}
+        {/* ── Galeri / Screenshot ── */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Screenshot Tambahan (Galeri)
+            Galeri Tambahan
+            <span className="ml-2 text-[11px] font-normal text-slate-400">Gambar atau Video, maks {MAX_SCREENSHOTS} item</span>
           </label>
 
-          {/* Input file tersembunyi — multiple */}
           <input
             ref={screenshotInputRef}
             type="file"
-            accept={IMAGE_ACCEPT}
+            accept={MEDIA_ACCEPT}
             multiple
             className="hidden"
             onChange={handleScreenshotFileChange}
-            aria-label="Upload screenshot tambahan"
+            aria-label="Upload item galeri"
           />
 
           <Button
@@ -586,72 +586,40 @@ export function PortfolioForm({
             size="sm"
             icon={Plus}
             onClick={() => {
-              setImageErrors((prev) => ({ ...prev, screenshot: null }));
+              setMediaErrors((prev) => ({ ...prev, screenshot: null }));
               screenshotInputRef.current?.click();
             }}
           >
-            Tambah Gambar
+            Tambah Gambar / Video
           </Button>
 
-          {/* Error upload screenshot */}
-          {imageErrors.screenshot && (
-            <p className="mt-1.5 text-xs text-red-600 font-medium">{imageErrors.screenshot}</p>
-          )}
+          {mediaErrors.screenshot && <p className="mt-1.5 text-xs text-red-600 font-medium">{mediaErrors.screenshot}</p>}
 
-          {/* Grid preview screenshot */}
           {formData.screenshots.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
               {formData.screenshots.map((src, idx) => (
-                <div
+                <MediaPreview
                   key={idx}
-                  className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-100"
-                >
-                  <img
-                    src={src}
-                    alt={`Screenshot ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://picsum.photos/800/500?grayscale';
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveScreenshot(idx)}
-                    className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-md opacity-90 hover:opacity-100 transition-opacity shadow-xs"
-                    title="Hapus gambar ini"
-                    aria-label={`Hapus screenshot ${idx + 1}`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  src={src}
+                  label={`Item galeri ${idx + 1}`}
+                  onRemove={() => handleRemoveScreenshot(idx)}
+                />
               ))}
             </div>
           )}
 
           {formData.screenshots.length === 0 && (
-            <p className="mt-2 text-xs text-slate-400 italic">Belum ada screenshot ditambahkan.</p>
+            <p className="mt-2 text-xs text-slate-400 italic">Belum ada media ditambahkan.</p>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* ── Action Buttons ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={() => navigate('/admin/portofolio')}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="outline" size="lg" onClick={() => navigate('/admin/portofolio')} disabled={isSubmitting}>
           Batal
         </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          icon={Save}
-          isLoading={isSubmitting}
-        >
+        <Button type="submit" variant="primary" size="lg" icon={Save} isLoading={isSubmitting}>
           {isEdit ? 'Simpan Perubahan' : 'Terbitkan Portofolio'}
         </Button>
       </div>

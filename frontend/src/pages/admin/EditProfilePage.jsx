@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Save, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Save, Lock, Eye, EyeOff, AlertCircle, Camera, Trash2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useToast } from '../../hooks/useToast.jsx';
 import { authService } from '../../services/authService.js';
@@ -7,17 +7,25 @@ import { Input } from '../../components/common/Input.jsx';
 import { Select } from '../../components/common/Select.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { useMajors } from '../../hooks/useMajors.js';
-import { isValidUrl } from '../../utils/validators.js';
+import {
+  validateImageFile,
+  fileToAvatarDataUrl,
+  IMAGE_ACCEPT,
+  MAX_FILE_SIZE_MB,
+} from '../../utils/imageFile.js';
 
-/** Avatar fallback: inisial nama dalam lingkaran berwarna. */
-function AvatarFallback({ name }) {
+/** Avatar inisial nama sebagai fallback. */
+function AvatarFallback({ name, size = 'lg' }) {
   const initials = (name || 'U')
     .split(' ')
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() || '')
     .join('');
+  const cls = size === 'lg'
+    ? 'w-24 h-24 text-2xl'
+    : 'w-20 h-20 text-xl';
   return (
-    <div className="w-20 h-20 rounded-full bg-[#0B2E6B] text-white text-2xl font-bold flex items-center justify-center shrink-0 select-none">
+    <div className={`${cls} rounded-full bg-[#0B2E6B] text-white font-bold flex items-center justify-center shrink-0 select-none`}>
       {initials}
     </div>
   );
@@ -25,36 +33,70 @@ function AvatarFallback({ name }) {
 
 export function EditProfilePage() {
   const { user, updateProfile, isStudent } = useAuth();
-  const toast = useToast();
+  const toast   = useToast();
   const { majorNames } = useMajors();
 
-  // ── Form Profil ──────────────────────────────────────────────────────────
+  // ── Form Profil ───────────────────────────────────────────────────────────
   const [profileForm, setProfileForm] = useState({
-    name:       user?.name || '',
-    avatar:     user?.avatar || '',
+    name:       user?.name       || '',
     class_name: user?.class_name || '',
-    major:      user?.major || '',
+    major:      user?.major      || '',
   });
-  const [profileErrors, setProfileErrors] = useState({});
-  const [profileServerError, setProfileServerError] = useState('');
-  const [savingProfile, setSavingProfile] = useState(false);
+  // avatar disimpan terpisah sebagai data URL (bukan di profileForm)
+  const [avatarDataUrl, setAvatarDataUrl] = useState(user?.avatar || null);
+  const [avatarChanged, setAvatarChanged] = useState(false); // apakah user mengubah foto
 
-  // ── Form Password ────────────────────────────────────────────────────────
+  const [profileErrors, setProfileErrors]       = useState({});
+  const [avatarError, setAvatarError]           = useState(null);
+  const [profileServerError, setProfileServerError] = useState('');
+  const [savingProfile, setSavingProfile]       = useState(false);
+
+  const avatarInputRef = useRef(null);
+
+  // ── Form Password ─────────────────────────────────────────────────────────
   const [pwForm, setPwForm] = useState({
     current_password: '',
-    new_password: '',
+    new_password:     '',
     confirm_password: '',
   });
-  const [pwErrors, setPwErrors]               = useState({});
-  const [pwServerError, setPwServerError]     = useState('');
-  const [savingPw, setSavingPw]               = useState(false);
-  const [showCurrent, setShowCurrent]         = useState(false);
-  const [showNew, setShowNew]                 = useState(false);
-  const [showConfirm, setShowConfirm]         = useState(false);
+  const [pwErrors, setPwErrors]       = useState({});
+  const [pwServerError, setPwServerError] = useState('');
+  const [savingPw, setSavingPw]       = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew]         = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const majorOptions = majorNames.map((m) => ({ value: m, label: m }));
 
-  // ── Handle perubahan input profil ────────────────────────────────────────
+  // ── Avatar upload ─────────────────────────────────────────────────────────
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset agar file yang sama bisa dipilih ulang
+    if (!file) return;
+
+    const { valid, error } = validateImageFile(file);
+    if (!valid) {
+      setAvatarError(error);
+      return;
+    }
+
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file, 256, 0.85);
+      setAvatarDataUrl(dataUrl);
+      setAvatarChanged(true);
+      setAvatarError(null);
+    } catch (err) {
+      setAvatarError(err.message || 'Gagal memproses foto. Coba file lain.');
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarDataUrl(null);
+    setAvatarChanged(true);
+    setAvatarError(null);
+  };
+
+  // ── Profil form ───────────────────────────────────────────────────────────
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfileForm((p) => ({ ...p, [name]: value }));
@@ -67,12 +109,9 @@ export function EditProfilePage() {
     if (!profileForm.name.trim() || profileForm.name.trim().length < 2) {
       errs.name = 'Nama minimal 2 karakter';
     }
-    if (profileForm.avatar && !isValidUrl(profileForm.avatar)) {
-      errs.avatar = 'URL foto harus diawali http:// atau https://';
-    }
     if (isStudent) {
       if (!profileForm.class_name.trim()) errs.class_name = 'Kelas wajib diisi';
-      if (!profileForm.major) errs.major = 'Jurusan wajib dipilih';
+      if (!profileForm.major)             errs.major      = 'Jurusan wajib dipilih';
     }
     return errs;
   };
@@ -85,14 +124,22 @@ export function EditProfilePage() {
 
     setSavingProfile(true);
     try {
-      const payload = { name: profileForm.name.trim(), avatar: profileForm.avatar.trim() };
+      const payload = { name: profileForm.name.trim() };
+
+      // Sertakan avatar hanya jika user mengubahnya
+      if (avatarChanged) {
+        payload.avatar = avatarDataUrl || '';   // kosong = hapus foto
+      }
+
       if (isStudent) {
         payload.class_name = profileForm.class_name.trim();
         payload.major      = profileForm.major;
       }
+
       const res = await updateProfile(payload);
       if (res.success) {
         toast.success('Profil berhasil diperbarui.');
+        setAvatarChanged(false);
       } else {
         setProfileServerError(res.message || 'Gagal memperbarui profil.');
       }
@@ -103,7 +150,7 @@ export function EditProfilePage() {
     }
   };
 
-  // ── Handle perubahan input password ─────────────────────────────────────
+  // ── Password form ─────────────────────────────────────────────────────────
   const handlePwChange = (e) => {
     const { name, value } = e.target;
     setPwForm((p) => ({ ...p, [name]: value }));
@@ -114,12 +161,10 @@ export function EditProfilePage() {
   const validatePw = () => {
     const errs = {};
     if (!pwForm.current_password) errs.current_password = 'Password saat ini wajib diisi';
-    if (!pwForm.new_password || pwForm.new_password.length < 8) {
+    if (!pwForm.new_password || pwForm.new_password.length < 8)
       errs.new_password = 'Password baru minimal 8 karakter';
-    }
-    if (pwForm.new_password !== pwForm.confirm_password) {
+    if (pwForm.new_password !== pwForm.confirm_password)
       errs.confirm_password = 'Konfirmasi password tidak cocok';
-    }
     return errs;
   };
 
@@ -148,37 +193,97 @@ export function EditProfilePage() {
     }
   };
 
-  // Avatar yang ditampilkan: pakai preview dari field form jika valid
-  const avatarSrc = profileForm.avatar && isValidUrl(profileForm.avatar) ? profileForm.avatar : null;
-
   return (
     <div className="max-w-2xl mx-auto space-y-8">
 
-      {/* ── Kartu 1: Data Profil ─────────────────────────────────────────── */}
+      {/* ── Kartu 1: Data Profil ──────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 sm:p-8 space-y-6">
         <div className="border-b border-slate-100 pb-4">
           <h2 className="text-lg font-bold text-[#0F172A] font-heading">Data Profil</h2>
           <p className="text-xs text-slate-500 mt-0.5">Perbarui nama, foto, dan informasi kelas.</p>
         </div>
 
-        {/* Preview avatar */}
+        {/* ── Area foto profil ── */}
         <div className="flex items-center gap-5">
-          {avatarSrc ? (
-            <img
-              src={avatarSrc}
-              alt={user?.name}
-              className="w-20 h-20 rounded-full object-cover border-2 border-[#F2B705] shadow"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-          ) : (
-            <AvatarFallback name={profileForm.name || user?.name} />
-          )}
-          <div>
-            <p className="text-sm font-semibold text-slate-800">{user?.name}</p>
-            <p className="text-xs text-slate-500 capitalize">{user?.role === 'admin' ? 'Admin Guru' : 'Murid'}</p>
+          {/* Input file tersembunyi */}
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept={IMAGE_ACCEPT}
+            className="hidden"
+            onChange={handleAvatarFileChange}
+            aria-label="Upload foto profil"
+          />
+
+          {/* Lingkaran avatar + tombol kamera */}
+          <div className="relative shrink-0">
+            {avatarDataUrl ? (
+              <img
+                src={avatarDataUrl}
+                alt={profileForm.name || user?.name}
+                className="w-24 h-24 rounded-full object-cover border-2 border-[#F2B705] shadow"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            ) : (
+              <AvatarFallback name={profileForm.name || user?.name} size="lg" />
+            )}
+
+            {/* Tombol kamera — overlay di sudut kanan bawah */}
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#0B2E6B] text-white flex items-center justify-center shadow-md hover:bg-[#1E40AF] transition-colors"
+              title="Ganti foto profil"
+              aria-label="Ganti foto profil"
+            >
+              <Camera className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Info + tombol aksi */}
+          <div className="space-y-1.5 min-w-0">
+            <p className="text-sm font-semibold text-slate-800 truncate">
+              {profileForm.name || user?.name}
+            </p>
+            <p className="text-xs text-slate-500">
+              {user?.role === 'admin' ? 'Admin Guru' : 'Murid'}
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="text-xs font-semibold text-[#0B2E6B] hover:underline"
+              >
+                {avatarDataUrl ? 'Ganti Foto' : 'Upload Foto'}
+              </button>
+              {avatarDataUrl && (
+                <>
+                  <span className="text-slate-300 text-xs">·</span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="text-xs font-semibold text-red-500 hover:underline"
+                  >
+                    Hapus Foto
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400">
+              JPG, PNG, atau WebP — maks {MAX_FILE_SIZE_MB} MB
+            </p>
           </div>
         </div>
 
+        {/* Error upload foto */}
+        {avatarError && (
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-xs text-rose-800">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+            <span>{avatarError}</span>
+          </div>
+        )}
+
+        {/* Error server */}
         {profileServerError && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-xs text-rose-800">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
@@ -196,7 +301,7 @@ export function EditProfilePage() {
             required
           />
 
-          {/* Email: read-only */}
+          {/* Email read-only */}
           <Input
             label="Email (tidak dapat diubah)"
             type="email"
@@ -205,17 +310,7 @@ export function EditProfilePage() {
             helperText="Email bersifat permanen dan tidak dapat diubah."
           />
 
-          <Input
-            label="URL Foto Profil (opsional)"
-            name="avatar"
-            value={profileForm.avatar}
-            onChange={handleProfileChange}
-            placeholder="https://contoh.com/foto.jpg"
-            error={profileErrors.avatar}
-            helperText="Kosongkan untuk menggunakan inisial nama."
-          />
-
-          {/* Hanya murid: kelas & jurusan */}
+          {/* Kelas & Jurusan — hanya murid */}
           {isStudent && (
             <>
               <Input
@@ -246,11 +341,13 @@ export function EditProfilePage() {
         </form>
       </div>
 
-      {/* ── Kartu 2: Ubah Password ───────────────────────────────────────── */}
+      {/* ── Kartu 2: Ubah Password ────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 sm:p-8 space-y-6">
         <div className="border-b border-slate-100 pb-4">
           <h2 className="text-lg font-bold text-[#0F172A] font-heading">Ubah Password</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Gunakan password yang kuat dan belum pernah dipakai sebelumnya.</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Gunakan password yang kuat dan belum pernah dipakai sebelumnya.
+          </p>
         </div>
 
         {pwServerError && (
@@ -261,7 +358,6 @@ export function EditProfilePage() {
         )}
 
         <form onSubmit={handleChangePassword} className="space-y-4" noValidate>
-          {/* Password saat ini */}
           <div className="relative">
             <Input
               label="Password Saat Ini"
@@ -281,7 +377,6 @@ export function EditProfilePage() {
             </button>
           </div>
 
-          {/* Password baru */}
           <div className="relative">
             <Input
               label="Password Baru (min. 8 karakter)"
@@ -301,7 +396,6 @@ export function EditProfilePage() {
             </button>
           </div>
 
-          {/* Konfirmasi password baru */}
           <div className="relative">
             <Input
               label="Konfirmasi Password Baru"

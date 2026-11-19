@@ -26,6 +26,7 @@ import { ManageStudentPage } from '../pages/admin/ManageStudentPage.jsx';
 import { ManageMajorPage } from '../pages/admin/ManageMajorPage.jsx';
 import { EditProfilePage } from '../pages/admin/EditProfilePage.jsx';
 import { StudentReviewsPage } from '../pages/admin/StudentReviewsPage.jsx';
+import { ManageReviewPage } from '../pages/admin/ManageReviewPage.jsx';
 
 export function AppRoutes() {
   return (
@@ -49,6 +50,7 @@ export function AppRoutes() {
           <Route path="/admin/kategori" element={<ManageCategoryPage />} />
           <Route path="/admin/jurusan" element={<ManageMajorPage />} />
           <Route path="/admin/murid" element={<ManageStudentPage />} />
+          <Route path="/admin/ulasan-admin" element={<ManageReviewPage />} />
         </Route>
       </Route>
 
